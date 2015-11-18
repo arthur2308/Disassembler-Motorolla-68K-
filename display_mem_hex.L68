@@ -1,0 +1,118 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.04
+Created On: 11/17/2015 11:14:23 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :Lab 2
+00000000                             3  * Written by :Phat Tran
+00000000                             4  * Date       :10/21/15
+00000000                             5  * Description:CSS422 lab work
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  
+00000000  =00001000                  8  addr1   EQU     $1000               starting address
+00000000  =000010A0                  9  addr2   EQU     $10A0               ending address
+00000000                            10  
+00001000                            11      ORG    $1000
+00001000                            12  START:                              ; first instruction of program
+00001000                            13  
+00001000                            14  *   Code for output
+00001000  43F9 00001090             15          LEA     MESSAGE,A1          Loads message into register A1
+00001006  103C 000E                 16          MOVE.B  #14,D0              Moves the number 14 into data register D0
+0000100A  4E4F                      17          TRAP    #15                 Displays message
+0000100C                            18          
+0000100C                            19  *   Code for setting addresses
+0000100C                            20          * starting address = A4
+0000100C                            21          * ending address   = A5
+0000100C                            22          * current address  = A6
+0000100C                            23          
+0000100C  287C 00001000             24          MOVEA.L #addr1,A4           Moves starting address to A4
+00001012  2A7C 000010A0             25          MOVEA.L #addr2,A5           Moves ending address to A5
+00001018                            26  
+00001018  2C4C                      27          MOVEA.L A4,A6               Moves starting address to A6
+0000101A                            28          
+0000101A                            29  *   Code for retrieving data and displaying it
+0000101A  BBCE                      30  LOOP    CMPA.L  A6,A5               Compares current addr to ending addr
+0000101C  6700 0054                 31          BEQ     DONE                Branches to done if they are equal
+00001020                            32  
+00001020                            33      
+00001020  121E                      34          MOVE.B  (A6)+,D1            Moves data at current address to D1, then increments
+00001022                            35  
+00001022                            36      * Reason this is needed is because data at A0 and up are seen as negative since the leading
+00001022                            37      *   bit is 1. This code skips those numbers are they are higher than zero and 10. 
+00001022  B23C 0000                 38          CMP.B   #0,D1               Compares D1 to zero
+00001026  6D00 000A                 39          BLT     HEX                 Branches to HEX if it is less than zero
+0000102A                            40  
+0000102A  B23C 0010                 41          CMP.B   #$10,D1             Compares data to hex 10
+0000102E  6D00 0034                 42          BLT     ZERO                Adds a zero if it is single hex
+00001032                            43  
+00001032  143C 0010                 44  HEX     MOVE.B  #16,D2              Sets D1 as a HEX number for trap task 15
+00001036  103C 000F                 45          MOVE.B  #15,D0              Sets trap task as #15
+0000103A  4E4F                      46          TRAP    #15
+0000103C                            47          
+0000103C  43F9 0000109C             48          LEA     SPACE,A1            Loads message into register A1
+00001042  103C 000E                 49          MOVE.B  #14,D0              Moves the number 14 into data register D0
+00001046  4E4F                      50          TRAP    #15                 Displays message
+00001048                            51          
+00001048                            52  * Display counter -- creates new line every 8 bytes
+00001048                            53          * D7 is used as counter
+00001048                            54          
+00001048  5207                      55          ADDQ.B  #1,D7               Adds 1 to D7
+0000104A  BE3C 0010                 56          CMP.B   #16,D7               Compares 8 to D7
+0000104E  6700 0004                 57          BEQ     RESET
+00001052                            58          
+00001052  60C6                      59          BRA     LOOP                Loops back to display next address
+00001054                            60  
+00001054  7E00                      61  RESET   MOVEQ   #0,D7               Sets counter back to zero
+00001056  43F9 0000109E             62          LEA     LINE,A1             Creates a new line
+0000105C  103C 000E                 63          MOVE.B  #14,D0
+00001060  4E4F                      64          TRAP    #15
+00001062  60B6                      65          BRA     LOOP                Goes back into loop
+00001064                            66  
+00001064  43F9 0000109A             67  ZERO    LEA     DISPZERO,A1         Loads zero
+0000106A  103C 000E                 68          MOVE.B  #14,D0              Sets trap task to #14
+0000106E  4E4F                      69          TRAP    #15
+00001070  60C0                      70          BRA     HEX
+00001072                            71  
+00001072  43F9 0000109E             72  DONE    LEA     LINE,A1             Creates a new line
+00001078  103C 000E                 73          MOVE.B  #14,D0
+0000107C  4E4F                      74          TRAP    #15
+0000107E  43F9 000010A1             75          LEA     CLOSE,A1            Displays closing message
+00001084  103C 000E                 76          MOVE.B  #14,D0
+00001088  4E4F                      77          TRAP    #15
+0000108A  103C 0009                 78          MOVE.B  #9,D0               Halts simulator
+0000108E  4E4F                      79          TRAP    #15
+00001090                            80      
+00001090  =0000000D                 81  CR      EQU     $0D                 ASCII code for carriage return
+00001090  =0000000A                 82  LF      EQU     $0A                 ASCII code for line feed
+00001090                            83  
+00001090                            84  
+00001090= 57 65 6C 63 6F 6D ...     85  MESSAGE     DC.B    'Welcome',CR,LF,0                input message
+0000109A= 30 00                     86  DISPZERO    DC.B    '0',0             message for #0
+0000109C= 20 00                     87  SPACE       DC.B    ' ',0
+0000109E= 0D 0A 00                  88  LINE        DC.B    '',CR,LF,0
+000010A1= 47 6F 6F 64 62 79 ...     89  CLOSE       DC.B    'Goodbye!',CR,LF,0
+000010AC                            90  
+000010AC                            91          END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ADDR1               1000
+ADDR2               10A0
+CLOSE               10A1
+CR                  D
+DISPZERO            109A
+DONE                1072
+HEX                 1032
+LF                  A
+LINE                109E
+LOOP                101A
+MESSAGE             1090
+RESET               1054
+SPACE               109C
+START               1000
+ZERO                1064
