@@ -4,7 +4,7 @@
 * Date       :10/22/2015
 * Description:Tutorial program for lab2
 *-----------------------------------------------------------
-START    ORG    $1000
+START    ORG    $3000
              
         MOVE.B  D6, D4
         MOVEA.W  D6, A4
@@ -73,12 +73,13 @@ START    ORG    $1000
         BTST    D5, $5454.W 
         JSR $5454.W 
 
-        END     $1000      
+        END     $3000      
         
         
         
         
         
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
