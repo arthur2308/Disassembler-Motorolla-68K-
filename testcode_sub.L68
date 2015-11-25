@@ -1,0 +1,239 @@
+00007000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.04
+Created On: 11/24/2015 11:20:56 PM
+
+00000000                             1  
+00000000                             2  **********************************************************************
+00000000                             3  
+00000000                             4  *
+00000000                             5  
+00000000                             6  *  Beginning of EQUates section, just like #define in C
+00000000                             7  
+00000000                             8  *
+00000000                             9  
+00000000                            10  **********************************************************************
+00000000                            11  
+00000000  =00004000                 12  addr1     EQU     $4000        
+00000000                            13  
+00000000  =00004001                 14  addr2     EQU     $4001 
+00000000                            15  
+00000000  =000000C0                 16  data1     EQU     $C0
+00000000                            17  
+00000000  =0000A7FF                 18  data2     EQU     $A7FF 
+00000000                            19  
+00000000  =00005555                 20  data3     EQU     $5555
+00000000                            21  
+00000000  =00000000                 22  data4     EQU     $0000 
+00000000                            23  
+00000000  =00001246                 24  data5     EQU     4678 
+00000000                            25  
+00000000  =0000004F                 26  data6     EQU     %01001111 
+00000000                            27  
+00000000  =00000017                 28  data7     EQU     %00010111 
+00000000                            29  
+00000000                            30  
+00000000                            31  
+00000000                            32  
+00000000                            33  **********************************************************************
+00000000                            34  
+00000000                            35  *
+00000000                            36  
+00000000                            37  * Beginning of code segment. This is the actual assembly language instructions.
+00000000                            38  
+00000000                            39  *
+00000000                            40  
+00000000                            41  *****************************************************************************************************
+00000000                            42  
+00000000                            43   
+00000000                            44  
+00007000                            45      ORG $7000          * This pseudo op code tells the assembler  here                                                                                                                         
+00007000                            46  START
+00007000                            47                                             * the program will run in memory
+00007000                            48  
+00007000                            49  start   
+00007000                            50  
+00007000                            51  
+00007000                            52  ********************************** SUB *********************************
+00007000                            53  * sub byte
+00007000                            54  
+00007000                            55  
+00007000                            56  
+00007000  0400 00C0                 57          SUB.B   #data1,D0   * immediate data to D0 byye
+00007004                            58  
+00007004  9318                      59          SUB.B   D1,(A0)+    * sub post-increment to D1
+00007006                            60  
+00007006  9321                      61          SUB.B   D1,-(A1)    * sub pre-increment to D1
+00007008                            62  
+00007008  9338 4000                 63          SUB.B   D1,$4000    * not sure what this does
+0000700C                            64  
+0000700C  9339 40010000             65          SUB.B   D1,$40010000    * not sure what this does
+00007012                            66  
+00007012                            67  
+00007012                            68  
+00007012  9001                      69          SUB.B   D1, D0      * sub D1 to D0
+00007014                            70  
+00007014                            71  
+00007014  9010                      72          SUB.B   (A0),D0     * sub D0 to A0 indirect
+00007016                            73  
+00007016  9018                      74          SUB.B   (A0)+,D0    * sub post-increment
+00007018                            75  
+00007018  9021                      76          SUB.B   -(A1),D0    * sub pre-increment
+0000701A                            77  
+0000701A                            78  
+0000701A  9039 0000A7FF             79          SUB.B   data2,D0    * i think this passes? word
+00007020                            80  
+00007020  9038 5555                 81          SUB.B   data3,D0    * longword?
+00007024                            82  
+00007024                            83  * sub word
+00007024                            84  
+00007024  0440 00C0                 85          SUB.W   #data1,D0   * immediate data to D0 byte
+00007028                            86  
+00007028  0440 1021                 87          SUB.W   #$1021,D0   * immediate data to D0 word
+0000702C                            88  
+0000702C  90C1                      89          SUB.W   D1,A0       * sub A0 to D1
+0000702E                            90  
+0000702E  9358                      91          SUB.W   D1,(A0)+    * sub post-increment to D1
+00007030                            92  
+00007030  9361                      93          SUB.W   D1,-(A1)    * sub pre-increment to D1
+00007032                            94  
+00007032  9378 4000                 95          SUB.W   D1,$4000    * not sure what this does
+00007036                            96  
+00007036  9379 40010000             97          SUB.W   D1,$40010000    * not sure what this does
+0000703C                            98  
+0000703C                            99  
+0000703C                           100  
+0000703C  9041                     101          SUB.W   D1, D0      * sub D1 to D0
+0000703E                           102  
+0000703E  9048                     103          SUB.W   A0,D0       * sub D0 to A0 direct
+00007040                           104  
+00007040  9050                     105          SUB.W   (A0),D0     * sub D0 to A0 indirect
+00007042                           106  
+00007042  9058                     107          SUB.W   (A0)+,D0    * sub post-increment
+00007044                           108  
+00007044  9061                     109          SUB.W   -(A1),D0    * sub pre-increment
+00007046                           110  
+00007046                           111  
+00007046  9079 0000A7FF            112          SUB.W   data2,D0    * i think this passes? word
+0000704C                           113  
+0000704C  9078 5555                114          SUB.W   data3,D0    * longword?
+00007050                           115  
+00007050                           116  
+00007050                           117  * sub longword
+00007050                           118  
+00007050                           119  
+00007050  0480 000000C0            120          SUB.L   #data1,D0   * immediate data to D0 byte
+00007056                           121  
+00007056  0480 00001021            122          SUB.L   #$1021,D0   * immediate data to D0 word
+0000705C                           123  
+0000705C  0480 AAAA5555            124          SUB.L   #$AAAA5555,D0   * immediate data to D0 longword
+00007062                           125  
+00007062  91C1                     126          SUB.L   D1,A0       * sub A0 to D1
+00007064                           127  
+00007064  9398                     128          SUB.L   D1,(A0)+    * sub post-increment to D1
+00007066                           129  
+00007066  93A1                     130          SUB.L   D1,-(A1)    * sub pre-increment to D1
+00007068                           131  
+00007068  93B8 4000                132          SUB.L   D1,$4000    * not sure what this does
+0000706C                           133  
+0000706C  93B9 40010000            134          SUB.L   D1,$40010000    * not sure what this does
+00007072                           135  
+00007072                           136  
+00007072                           137  
+00007072  9081                     138          SUB.L   D1, D0      * sub D1 to D0
+00007074                           139  
+00007074  9088                     140          SUB.L   A0,D0       * sub D0 to A0 direct
+00007076                           141  
+00007076  9090                     142          SUB.L   (A0),D0     * sub D0 to A0 indirect
+00007078                           143  
+00007078  9098                     144          SUB.L   (A0)+,D0    * sub post-increment
+0000707A                           145  
+0000707A  90A1                     146          SUB.L   -(A1),D0    * sub pre-increment
+0000707C                           147  
+0000707C                           148  
+0000707C  90B9 0000A7FF            149          SUB.L   data2,D0    * i think this passes? word
+00007082                           150  
+00007082  90B8 5555                151          SUB.L   data3,D0    * longword?
+00007086                           152  
+00007086                           153  
+00007086                           154  ******************************* SUBA **************************************
+00007086                           155  * SUBA WORD
+00007086                           156  
+00007086  90C1                     157          SUBA.W D1,A0        * Data register to address register
+00007088                           158  
+00007088  90C8                     159          SUBA.W A0,A0        * address register to data register direct
+0000708A                           160  
+0000708A  90D0                     161          SUBA.W (A0),A0      * address register to data register indirect
+0000708C                           162  
+0000708C  90D8                     163          SUBA.W (A0)+,A0     * post-increment
+0000708E                           164  
+0000708E  90E1                     165          SUBA.W -(A1),A0     * pre-increment
+00007090                           166  
+00007090  90F8 4000                167          SUBA.W addr1,A0     * word address?
+00007094                           168  
+00007094  90FC 4000                169          SUBA.W #addr1,A0    * immediate address?
+00007098                           170  
+00007098  90F8 4000                171          SUBA.W $4000,A0     * random address
+0000709C                           172  
+0000709C  90F9 0000A7FF            173          SUBA.W data2,A0     * random data word
+000070A2                           174  
+000070A2  90FC A7FF                175          SUBA.W #data2,A0    * immediate data word
+000070A6                           176  
+000070A6  90FC AAAA                177          SUBA.W #$AAAA,A0    * immediate data word
+000070AA                           178  
+000070AA                           179  
+000070AA                           180  
+000070AA                           181  * SUBA LONGWORD
+000070AA                           182  
+000070AA  91C1                     183          SUBA.L D1,A0        * Data register to data register
+000070AC                           184  
+000070AC  91C8                     185          SUBA.L A0,A0        * address register to data register direct
+000070AE                           186  
+000070AE  91D0                     187          SUBA.L (A0),A0      * address register to data register indirect
+000070B0                           188  
+000070B0  91D8                     189          SUBA.L (A0)+,A0     * post-increment
+000070B2                           190  
+000070B2  91E1                     191          SUBA.L -(A1),A0     * pre-increment
+000070B4                           192  
+000070B4  91F8 4000                193          SUBA.L addr1,A0     * word address?
+000070B8                           194  
+000070B8  91FC 00004000            195          SUBA.L #addr1,A0    * immediate address?
+000070BE                           196  
+000070BE  91F8 4000                197          SUBA.L $4000,A0     * random address
+000070C2                           198  
+000070C2  91F9 0000A7FF            199          SUBA.L data2,A0     * random data word
+000070C8                           200  
+000070C8  91F8 5555                201          SUBA.L data3,A0     * random data longword
+000070CC                           202  
+000070CC  91FC 0000A7FF            203          SUBA.L #data2,A0    * immediate data word
+000070D2                           204  
+000070D2  91FC 00005555            205          SUBA.L #data3,A0    * immediate data longword
+000070D8                           206  
+000070D8  91FC 0000AAAA            207          SUBA.L #$AAAA,A0    * immediate data word
+000070DE                           208  
+000070DE  91FC AAAA5555            209          SUBA.L #$AAAA5555,A0    * immediate data longword
+000070E4                           210  
+000070E4                           211  
+000070E4                           212   ****************************** END ***************************************
+000070E4                           213  
+000070E4                           214  *Stop here. The next instruction shows how a label is used
+000070E4                           215  
+000070E4                           216  
+000070E4                           217          END   START            * This pseudo op-code tells the assembler 
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ADDR1               4000
+ADDR2               4001
+DATA1               C0
+DATA2               A7FF
+DATA3               5555
+DATA4               0
+DATA5               1246
+DATA6               4F
+DATA7               17
+START               7000
