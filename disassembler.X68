@@ -1,26 +1,53 @@
 *-----------------------------------------------------------
-* Title      :
-* Written by :
-* Date       :
-* Description:
+* Title      : Disassembler
+* Written by : Team A (Phat, Felicia, Arthur)
+* Date       : Thanksgiving 2015 (We started earlier but I happen to be filling this in today)
+* Description: Converts assembly language written in hex to readable human code (CSS422 Project)
 *-----------------------------------------------------------
 
 
+********************************
+* INFO:
+* bit0-4 are used to store information about binary op-code split into it's split-up stage
+* They are stored at the end of the code. (You can find code for storage at the end, after all the messages.)
+*   bit0 - Store first hex of op code
+*   bit1 - Store first 'bit' of a split op code
+*   bit2 - Store second 'bit' of a split op code
+*   bit3 - Store third 'bit' of a split op code
+*   bit4 - Store fourth 'bit' of a split op code
+* 
+* 
+* 
+* COMPLETED WORK:
+* SUB
+* SUBA
+* AND
+* ADD   - NOT TESTED
+* SUBI
+* ORI   - EORI and CMPI uses the same logic as these two
+* NOT
+* 
+* 
+****************************************************************************
+
+
+* sets start and end address
+* temp hard code
+* make UI later for input
 addr1   EQU     $7000
 *addr2   EQU     $7050
-addr2   EQU     $70E4
-bit0    EQU     $FF0
-bit1    EQU     $FF1
-bit2    EQU     $FF2
-bit3    EQU     $FF3
-bit4    EQU     $FF4
+addr2   EQU     $725A
+
 
     ORG    $1000
 START:                  ; first instruction of program
 
+        
+
+
         *   this stores some test EA into memory
         *LEA     addr1,A1
-        *MOVE.W  #$9361,(A1)+        *917C
+        *MOVE.W  #$0440,(A1)+        *917C
         *MOVE.W  #$917C,(A1)+       
         *MOVE.L  #$5555A7FF,(A1)+
         *MOVE.W  #$9078,(A1)+
@@ -28,42 +55,43 @@ START:                  ; first instruction of program
         
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
         
-        MOVEA.L #addr1,A6           Moves starting addr into A6 register
+        
         
 ******************************************** displays address location***********************************************
-        
-        
-        
+* This displays the address location of the op-code being worked on
+* A6 is used as current address
+
+        MOVEA.L #addr1,A6            Moves starting addr into A6 register
         
 NEWADDR
-        MOVE.L  A6,D7               Loads memory to data register
-        CMP.L   #addr2,D7
-        BGT     EXIT
+        MOVE.L  A6,D7               Loads the current address into D7
+        CMP.L   #addr2,D7            Compares current address to end address
+        BGT     DONE                Branches to done if current address > end address
         
         
-        MOVE.B  #2,D6               D7 is a counter, used to know loop back once
-        MOVE.L  D7,D2               Copies opcode saved in D2 to D7
-        SWAP    D2
+        MOVE.B  #2,D6               D6 is a counter, used for looping
+        MOVE.L  D7,D2               Copies opcode saved in D7 to D2 to be manipulated
+        SWAP    D2                  Swaps the location to be displayed (Display first word of a long word)
         BRA     DISPADDR2           Skips the second part to do later
 
 DISPADDR1
         MOVE.W  D7,D2
 DISPADDR2
-        MOVE.W  D2,D1               Copies data at D2 to D3
-        MOVE.W  D2,D3
-        MOVE.W  D2,D4
-        MOVE.W  D2,D5
+        MOVE.W  D2,D1               D1 will be the first byte of the word
+        MOVE.W  D2,D3               D3 will be the second byte of the word
+        MOVE.W  D2,D4               D4 will be the third byte of the word
+        MOVE.W  D2,D5               D5 will be the fourth byte of the word
 
-        LSR.W   #8,D1
+        LSR.W   #8,D1               Shifts D1 right 12 times to move the first byte of the word to the last byte
         LSR.W   #4,D1
-        LSL.W   #4,D3
-        LSR.W   #8,D3
+        LSL.W   #4,D3               Shifts D3 left 4 times to get rid of the first byte
+        LSR.W   #8,D3                 Then shifts D3 right 12 times to move it to the last byte
         LSR.W   #4,D3
-        LSL.W   #8,D4
-        LSR.W   #8,D4
+        LSL.W   #8,D4               Shifts D4 to the left 8 times to get rid of first 2 bytes
+        LSR.W   #8,D4                 Then shifts it right 12 times to move it to the last byte
         LSR.W   #4,D4
-        LSL.W   #8,D5
-        LSL.W   #4,D5
+        LSL.W   #8,D5               Shifts D5 to the left 12 times to get rid of the first 3 bytes
+        LSL.W   #4,D5                 Then shifts it back to the left 12 times to move it to the last byte position
         LSR.W   #8,D5
         LSR.W   #4,D5
         
@@ -121,13 +149,15 @@ DISPADDR6
         TRAP    #15
         
 *********************************************************************************************************************
+* Splits the first byte of the op code into nibbles
+* then sends it to the branch-table to jump to the appropiate section to be decoded
 
-        CLR     D1
-        CLR     D2
-        CLR     D3
-        CLR     D4
-        CLR     D5
-        CLR     D6
+        CLR.L   D1                  Clears the data registers
+        CLR.L   D2
+        CLR.L   D3
+        CLR.L   D4
+        CLR.L   D5
+        CLR.L   D6
 
         MOVE.B  (A6)+,D2            Moves data at current address to D1, then increments
         
@@ -147,12 +177,250 @@ DISPADDR6
         *   Moves second nibble to D5 to be used later
         MOVE.B  D2,D5
         MOVE.B  D3,bit0
+        *   Goes to a branch-table to figure out which op code it is
         BRA     CODE
 
+******************************************************************************************************
 *   This is where the table goes to detirmine which op-code to use
-CODE    CMP.B   #$9,D3              Goes to sub section
+CODE    
+        CMP.B   #$0,D3              Goes to immediate operation section
+        BEQ     IMD
+        CMP.B   #$4,D3              Goes to miscellaneous section
+        BEQ     MISC
+        CMP.B   #$9,D3              Goes to sub section
         BEQ     SUB
+        CMP.B   #$C,D3              Goes to sub but displays as AND
+        BEQ     SUB
+        CMP.B   #$D,D3              Goes to sub but displays as ADD
+        BEQ     SUB
+
+
         BRA     INVOPCODE
+
+
+******************************************************************************************************
+*   Immediate data arithmetic operations
+*   SUBI
+
+IMD     MOVE.B  D5,bit1
+        MOVE.B  (A6)+,D2
+
+        ADD.B   D2,D7
+
+        MOVE.B  D2,D3               Copies data at D2 to D3
+        *   this gets digit in 10's place
+        LSR.B   #4,D3               Shifts right to get rid of 1's place
+        *   this gets digit in 1's place
+        LSL.B   #4,D2               Shifts left to get rid of 10's place
+        LSR.B   #4,D2               Shifts back right into 1's place
+
+        *   D3 holds digit in 10's place
+        *   D2 holds digit in 1's place
+
+        LSR.B   #1,D3
+        BCC     IMD2
+        ADD.B   #$2,D4
+IMD2    LSR.B   #1,D3
+        BCC     IMD3
+        ADD.B   #$4,D4
+IMD3    CMP.B   #$7,D2
+        BLT     IMD4
+        ADD.B   #$1,D4
+        SUB.B   #$8,D2
+
+        *   Stores them into addr
+IMD4    MOVE.B  D3,bit2
+        MOVE.B  D4,bit3
+        MOVE.B  D2,bit4
+
+**************************
+* This finds the size of the operation
+
+        CMP.B   #$0,bit2
+        BEQ     IMDBYTE
+        CMP.B   #$1,bit2
+        BEQ     IMDWORD
+        CMP.B   #$2,bit2
+        BEQ     IMDLONG
+        BRA     INVOP
+
+*************************************************************
+* Display IMD op-code
+IMDPRINT
+        CMP.B   #$0,bit1
+        BEQ     IMDPRINTORI
+        CMP.B   #$4,bit1
+        BEQ     IMDPRINTSUBI
+        CMP.B   #$6,bit1
+        BEQ     IMDPRINTNOT
+
+IMDPRINTORI
+        LEA     MORI,A1
+        BRA     IMDPRINTEND
+
+IMDPRINTSUBI
+        LEA     MSUBI,A1
+        BRA     IMDPRINTEND
+
+* NOT isn't part of immediate operation, but they share similar structure so I put it here too
+IMDPRINTNOT
+        LEA     MNOT,A1
+        BRA     IMDPRINTEND
+
+IMDPRINTEND
+        MOVE.B  #14,D0
+        TRAP    #15
+        RTS
+
+*************************************************************
+* Immediate data operation size BYTE
+IMDBYTE
+        BSR     IMDPRINT
+        LEA     MBYTE,A1
+
+        * Moves size to D4, needed to use DISPEA
+        MOVE.B  #$1,D4
+        BRA     IMDEA
+
+*************************************************************
+* Immediate data operation size WORD
+IMDWORD
+        BSR     IMDPRINT
+        LEA     MWORD,A1
+
+        MOVE.B  D3,D4
+        BRA     IMDEA
+
+
+*************************************************************
+* Immediate data operation size LONG
+IMDLONG
+        BSR     IMDPRINT
+        LEA     MLONG,A1
+        
+
+        * Moves size to D4, needed to use DISPEA
+        MOVE.B  D3,D4
+
+IMDEA
+        * This prints out the size and creates tab
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     TAB,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        * Loads return address into A2
+        LEA     IMDEA2,A2
+        BRA     DISPEA
+IMDEA2
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     IMDEA3,A2
+        BRA     SUBEA
+IMDEA3
+        BRA     ENDNEWLINE
+
+******************************************************************************************************
+* Miscellaneous section
+*   Not goes here
+
+MISC
+        MOVE.B  D5,bit1
+        MOVE.B  (A6)+,D2
+
+        ADD.B   D2,D7
+
+        MOVE.B  D2,D3               Copies data at D2 to D3
+        *   this gets digit in 10's place
+        LSR.B   #4,D3               Shifts right to get rid of 1's place
+        *   this gets digit in 1's place
+        LSL.B   #4,D2               Shifts left to get rid of 10's place
+        LSR.B   #4,D2               Shifts back right into 1's place
+
+        *   D3 holds digit in 10's place
+        *   D2 holds digit in 1's place
+
+        LSR.B   #1,D3
+        BCC     MISC2
+        ADD.B   #$2,D4
+MISC2   LSR.B   #1,D3
+        BCC     MISC3
+        ADD.B   #$4,D4
+MISC3   CMP.B   #$7,D2
+        BLT     MISC4
+        ADD.B   #$1,D4
+        SUB.B   #$8,D2
+
+        *   Stores them into addr
+MISC4   MOVE.B  D3,bit2
+        MOVE.B  D4,bit3
+        MOVE.B  D2,bit4
+
+**************************
+* This finds the size of the operation
+
+        CMP.B   #$6,bit1
+        BEQ     MISCNOT
+        BRA     INVOP
+
+******************************************************
+* NOT
+* Reuses some of IMD section to display because they have similar format
+*  (I was kinda lazy too)
+MISCNOT
+        CMP.B   #$0,bit2
+        BEQ     MISCBYTE
+        CMP.B   #$1,bit2
+        BEQ     MISCWORD
+        CMP.B   #$2,bit2
+        BEQ     MISCLONG
+
+*************************************************************
+* Immediate data operation size BYTE
+MISCBYTE
+        BSR     IMDPRINT
+        LEA     MBYTE,A1
+
+        * Moves size to D4, needed to use DISPEA
+        MOVE.B  #$1,D4
+        BRA     MISCEA
+
+*************************************************************
+* Immediate data operation size WORD
+MISCWORD
+        BSR     IMDPRINT
+        LEA     MWORD,A1
+
+        MOVE.B  D3,D4
+        BRA     MISCEA
+
+
+*************************************************************
+* Immediate data operation size LONG
+MISCLONG
+        BSR     IMDPRINT
+        LEA     MLONG,A1
+
+        * Moves size to D4, needed to use DISPEA
+        MOVE.B  D3,D4
+
+MISCEA
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     TAB,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     MISCEA2,A2
+        BRA     SUBEA
+MISCEA2
+        BRA     ENDNEWLINE
+
+
+******************************************************************************************************
+* SUB section
 
         *   Grabs next two nibbles
 SUB     MOVE.B  (A6)+,D2
@@ -166,8 +434,6 @@ SUB     MOVE.B  (A6)+,D2
         LSL.B   #4,D2               Shifts left to get rid of 10's place
         LSR.B   #4,D2               Shifts back right into 1's place
 
-
-        
         *   D3 holds digit in 10's place
         *   D2 holds digit in 1's place
 
@@ -206,9 +472,11 @@ SUB1    MOVE.B  D1,bit1
         MOVE.L  #0,D6
 
         
-*** sub display ***
+******************************************************************************************************
+* After spliting the op-code into SUB's defined groupings
+*   This figures out which operation it is and goes to that sub-routine
 
-        * This will display SUBA instead  check this later
+        * This will display SUBA instead  -- check this later
         CMP.B   #$3,bit2
         BEQ     SUBA
         CMP.B   #$7,bit2
@@ -229,7 +497,7 @@ SUB1    MOVE.B  D1,bit1
         CMP.B   #$6,bit2
         BEQ     SUBSIZE6
    
-
+******************************************************************************************************
 *   Displays size, then does operation order
 
 *   000 byte    EA,DN
@@ -253,7 +521,7 @@ SUBSIZE11
 SUBSIZE12
         BRA     ENDNEWLINE
 
-
+*************************************************
 *   001 word    EA,DN
 SUBSIZE2
         BSR     SUBPRINT
@@ -275,6 +543,7 @@ SUBSIZE21
 SUBSIZE22
         BRA     ENDNEWLINE
 
+*************************************************
 *   010 long    EA,DN
 SUBSIZE3
         BSR     SUBPRINT
@@ -296,7 +565,7 @@ SUBSIZE31
 SUBSIZE32
         BRA     ENDNEWLINE
 
-
+*************************************************
 *   100 byte    DN,EA
 SUBSIZE4
         BSR     SUBPRINT
@@ -320,7 +589,7 @@ SUBSIZE41
 SUBSIZE42
         BRA     ENDNEWLINE
 
-
+*************************************************
 *   101 word    DN,EA
 SUBSIZE5
         BSR     SUBERRORTEST1               * This does error testing
@@ -343,7 +612,7 @@ SUBSIZE51
 SUBSIZE52
         BRA     ENDNEWLINE
 
-
+*************************************************
 *   110 long    DN,EA
 SUBSIZE6
         BSR     SUBERRORTEST1               * This does error testing
@@ -368,7 +637,9 @@ SUBSIZE61
 SUBSIZE62
         BRA     ENDNEWLINE
 
+****************************************************************************
 *   This section is for SUBA
+*   Displays 'SUBA.' then decodes the op-code as SUBA
 SUBA
         LEA     MSUBA,A1                    Displays 'SUBA.'
         MOVE.B  #14,D0
@@ -380,6 +651,7 @@ SUBA
         CMP.B   #$7,bit2
         BEQ     SUBSIZE8
 
+*************************************************
 *   SUBA Word   ea,An
 SUBSIZE7
         LEA     MWORD,A1
@@ -400,6 +672,7 @@ SUBSIZE71
 SUBSIZE72
         BRA     ENDNEWLINE
 
+*************************************************
 *   SUBA longword   ea,An
 SUBSIZE8
         LEA     MLONG,A1
@@ -420,18 +693,49 @@ SUBSIZE81
 SUBSIZE82
         BRA     ENDNEWLINE
 
-
+*************************************************
+* Jumps to memory location at A2
 SUBJMPA2
         JMP     (A2)
 
+*************************************************
+* Prints out opcode name
 SUBPRINT
-        * Displays 'SUB.' 
+        CMP.B   #$9,bit0                Prints SUB
+        BEQ     SUBPRINTSUB
+        CMP.B   #$C,bit0                Prints AND
+        BEQ     SUBPRINTAND
+        CMP.B   #$D,bit0                Prints ADD
+        BEQ     SUBPRINTADD
+
+
+
+SUBPRINTSUB   * Displays 'SUB.' 
         LEA     MSUB,A1
         MOVE.B  #14,D0
         TRAP    #15
+        BRA     SUBPRINTEND
 
+SUBPRINTAND   * Displays 'AND.' 
+        LEA     MAND,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     SUBPRINTEND
+
+SUBPRINTADD   * Displays 'ADD.' 
+        LEA     MADD,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     SUBPRINTEND
+
+
+SUBPRINTEND
         RTS
 
+
+*******************************************************************
+* Error testing for DN->EA operations
+*  Data register, address register, and immediate data cannot be destinations
 SUBERRORTEST1
         * test for DN or AN register, branches to invalid op code if true
         CMP.B   #0,bit3
@@ -451,69 +755,8 @@ SUBERRORTEST1
 SUBERRORTEST11
         RTS
 
-INVOPCODE
-        ADD.B   (A6)+,D7
 
-INVOP
-        LEA     MDATA,A1
-        MOVE.B  #14,D0
-        TRAP    #15
-        LEA     TAB,A1
-        MOVE.B  #14,D0
-        TRAP    #15
-        
-        MOVE.B  #2,D6               D6 is a counter, used to know loop back once
-        
-        MOVE.W  D7,D2               Copies opcode saved in D2 to D7
-        LSR.W   #8,D2               Shifts D2 right 8 spaces to get the first byte of the word
-        BRA     INVOP2              Skips the second part to do later
-
-INVOP1
-        MOVE.B  D7,D2
-INVOP2
-        MOVE.B  D2,D3               Copies data at D2 to D3
-        *   this gets digit in 10's place
-        LSR.B   #4,D3               Shifts right to get rid of 1's place
-        *   this gets digit in 1's place
-        LSL.B   #4,D2               Shifts left to get rid of 10's place
-        LSR.B   #4,D2               Shifts back right into 1's place
-
-        
-        *   D3 holds digit in 10's place
-        *   D2 holds digit in 1's place
-        
-        MOVE.B  D3,D1               Displays digit in 10's place first
-
-        *   converts digits 10+ into letters
-
-        LEA     INVOP3,A3        Place address of TENS into A3 to continue from there after conversion
-        CMP.B   #9,D1               Compares digit to 9
-        BGT     CONV                Print out letter representation if greater than 9
-
-        MOVE.B  #3,D0               Displays digit if it is less than A
-        TRAP    #15
-        
-INVOP3   
-        MOVE.B  D2,D1               Displays digit in 1's place second
-
-        *   converts digits 10+ into letters
-        LEA     INVOP4,A3           Places address of NEXT into A3 to continue from there after conversion
-        CMP.B   #9,D1               Compares digit to 9
-        BGT     CONV                Print out letter representation if greater than 9
-        
-        MOVE.B  #3,D0               Displays digit if it is less than A
-        TRAP    #15
-        
-INVOP4
-* Display counter -- creates new line every 8 bytes
-        * D6 is used as counter
-        
-        SUB.B   #1,D6
-        CMP.B   #0,D6
-        BEQ     ENDNEWLINE
-        BRA     INVOP1              Loops back to display next address
-
-
+******************************************************************************************************
 *   Displays data register
 SUBDN
         LEA     MDN,A1
@@ -636,8 +879,9 @@ SUBANIDNEG
 
 
 
-
-*   Code to display EA
+******************************************************************************************************
+* Displays the EA as hex numbers
+* 
 SUBEA
         *   This finds which mode to use
         CMP.B   #$0,bit3
@@ -651,14 +895,11 @@ SUBEA
         CMP.B   #$4,bit3
         BEQ     SUBANIDNEG
         CMP.B   #$5,bit3
-        BEQ     EXIT
+        BEQ     ERROR
         CMP.B   #$6,bit3
-        BEQ     EXIT
+        BEQ     ERROR
         CMP.B   #$7,bit3
         BEQ     SUBEAHEX
-
-
-        
 
 SUBEAHEX
         CMP.B   #$4,bit4            Branches to immediate data section of bit4 is 4
@@ -673,12 +914,11 @@ SUBEAID2
         BEQ     SUBEAHEX1
         CMP.B   #$1,bit4
         BEQ     SUBEAHEX2
-        
-        *   write immediate data code here
-        LEA     HASH,A1
-        MOVE.B  #14,D0
-        TRAP    #15
 
+        CMP.B   #$0,bit2            * SUB byte displays as word
+        BEQ     SUBEAHEX1
+        CMP.B   #$4,bit2            * SUB byte displays as word
+        BEQ     SUBEAHEX1
         CMP.B   #$1,bit2            * SUB word
         BEQ     SUBEAHEX1
         CMP.B   #$5,bit2            * SUB word
@@ -691,7 +931,6 @@ SUBEAID2
         BEQ     SUBEAHEX2
         CMP.B   #$7,bit2            * SUBA longword
         BEQ     SUBEAHEX2
-
 
 SUBEAID
         LEA     HASH,A1
@@ -757,14 +996,162 @@ SUBEAHEX5
 
 ***   display EA ends here
 
+******************************************************************************************************
+* Displays the EA as hex numbers
+* INPUT: Size of EA in D4; 1 = word, 2 = longword
+* OUTPUT: Displays size of EA reading from A6
+* Jumps to location stored in A2 when finished
+DISPEA
+        LEA     MHEX,A1
+        MOVE.B  #14,D0
+        TRAP    #15
 
+        CMP.B   #$2,D4              Branches to longword display if size is 2
+        BEQ     DISPEALONG          Else it will assume word length
+
+DISPEAWORD
+        *absolute address word
+        MOVE.B  #2,D7
+        BRA     DISPEA3
+ 
+DISPEALONG
+        *absolute address long
+        MOVE.B  #4,D7
+        BRA     DISPEA3
+
+DISPEA3
+        CMP.B   #0,D7               Compares current addr to ending addr
+        BEQ     SUBJMPA2            Branches to done if they are equal
+
+    
+        MOVE.B  (A6)+,D2            Moves data at current address to D1, then increments
+        
+        MOVE.B  D2,D3               Copies data at D2 to D3
+        *   this gets digit in 10's place
+        LSR.B   #4,D3               Shifts right to get rid of 1's place
+        *   this gets digit in 1's place
+        LSL.B   #4,D2               Shifts left to get rid of 10's place
+        LSR.B   #4,D2               Shifts back right into 1's place
+
+        
+        *   D3 holds digit in 10's place
+        *   D2 holds digit in 1's place
+        
+        MOVE.B  D3,D1               Displays digit in 10's place first
+
+        *   converts digits 10+ into letters
+
+        LEA     DISPEA4,A3        Place address of TENS into A3 to continue from there after conversion
+        CMP.B   #9,D1               Compares digit to 9
+        BGT     CONV                Print out letter representation if greater than 9
+
+        MOVE.B  #3,D0               Displays digit if it is less than A
+        TRAP    #15
+  
+DISPEA4
+        MOVE.B  D2,D1               Displays digit in 1's place second
+
+        *   converts digits 10+ into letters
+        LEA     DISPEA5,A3           Places address of NEXT into A3 to continue from there after conversion
+        CMP.B   #9,D1               Compares digit to 9
+        BGT     CONV                Print out letter representation if greater than 9
+        
+        MOVE.B  #3,D0               Displays digit if it is less than A
+        TRAP    #15
+      
+DISPEA5
+* Display counter -- creates new line every 8 bytes
+        * D7 is used as counter
+        
+        SUB.B   #1,D7                       
+        BRA     DISPEA3              Loops back to display next address
+
+***   display EA ends here
+
+
+********************************************************************
+* Invalid op-code handling
+* Displays DATA YYYY
+*  YYYY represents the op-code that failed
+INVOPCODE
+        ADD.B   (A6)+,D7
+
+INVOP
+        LEA     MDATA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     TAB,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     MHEX,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        MOVE.B  #2,D6               D6 is a counter, used to know loop back once
+        
+        MOVE.W  D7,D2               Copies opcode saved in D2 to D7
+        LSR.W   #8,D2               Shifts D2 right 8 spaces to get the first byte of the word
+        BRA     INVOP2              Skips the second part to do later
+
+INVOP1
+        MOVE.B  D7,D2
+INVOP2
+        MOVE.B  D2,D3               Copies data at D2 to D3
+        *   this gets digit in 10's place
+        LSR.B   #4,D3               Shifts right to get rid of 1's place
+        *   this gets digit in 1's place
+        LSL.B   #4,D2               Shifts left to get rid of 10's place
+        LSR.B   #4,D2               Shifts back right into 1's place
+
+        
+        *   D3 holds digit in 10's place
+        *   D2 holds digit in 1's place
+        
+        MOVE.B  D3,D1               Displays digit in 10's place first
+
+        *   converts digits 10+ into letters
+
+        LEA     INVOP3,A3        Place address of TENS into A3 to continue from there after conversion
+        CMP.B   #9,D1               Compares digit to 9
+        BGT     CONV                Print out letter representation if greater than 9
+
+        MOVE.B  #3,D0               Displays digit if it is less than A
+        TRAP    #15
+        
+INVOP3   
+        MOVE.B  D2,D1               Displays digit in 1's place second
+
+        *   converts digits 10+ into letters
+        LEA     INVOP4,A3           Places address of NEXT into A3 to continue from there after conversion
+        CMP.B   #9,D1               Compares digit to 9
+        BGT     CONV                Print out letter representation if greater than 9
+        
+        MOVE.B  #3,D0               Displays digit if it is less than A
+        TRAP    #15
+        
+INVOP4
+* Display counter -- creates new line every 8 bytes
+        * D6 is used as counter
+        
+        SUB.B   #1,D6
+        CMP.B   #0,D6
+        BEQ     ENDNEWLINE
+        BRA     INVOP1              Loops back to display next address
+
+
+******************************************************************************************************
+* Creates a new line after an op-code is displayed, loops back to start to display next code
 ENDNEWLINE
         LEA     NEWLINE,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     NEWADDR
 
-        *   converts number 10-15 to A-F
+******************************************************************************************************
+* Converts decimal number into hex and displays it
+*   converts number 10-15 to A-F
+*   INPUT: decimal number in D1
+*   OUTPUT: HEX number to output
 CONV    CMP.B   #10,D1              Displays 10 as A
         BEQ     HEXA
         CMP.B   #11,D1              Displays 11 as B
@@ -799,19 +1186,27 @@ HEXF    LEA     DISPF,A1            Loads F character
 PRINT   MOVE.B  #14,D0              Sets trap task to #14
         TRAP    #15                 Prints out message in A1
         JMP     (A3)
-  
-  
-  
+
+ERROR   LEA     MERROR,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     EXIT
+
+DONE    LEA     MDONE,A1
+        MOVE.B  #14,D0
+        TRAP    #15
 
 EXIT    MOVE.B  #9,D0
         TRAP    #15
 
 ************************************ Output stuff **************************************
+* Stuff for output
+
 CR      EQU     $0D
 LF      EQU     $0A
 
 SPACE       DC.B    ' ',0
-NEWLINE        DC.B    '',CR,LF,0
+NEWLINE     DC.B    '',CR,LF,0
 TAB         DC.B    '   ',0
 COMMA       DC.B    ',',0
 OPENBRA     DC.B    '(',0
@@ -838,13 +1233,34 @@ MAN         DC.B    'A',0
 MDATA       DC.B    'DATA',0
 MSUB        DC.B    'SUB.',0
 MSUBA       DC.B    'SUBA.',0
-MERROR      DC.B    'ERROR',0
+MAND        DC.B    'AND.',0
+MADD        DC.B    'ADD.',0
+MSUBI       DC.B    'SUBI.',0
+MORI        DC.B    'ORI.',0
+MNOT        DC.B    'NOT.',0
+
+MERROR      DC.B    'ERROR: Something broke',0
+MDONE       DC.B    'COMPLETE: IT DID NOT CRASH',0
 
 
+********************************** MEMORY STORAGE **********************************************
+* Stores memory locations at the end of the program
+* How DS works: Give it a variable name.
+*   DS means Define Storage. Give it a size of how big you want the storage to be (Byte, Word, Longword)
+*   Last is the number of storage you want. 
+*   Example: DS.W   1   This creates a 1 longword location to be used. Memory would look like: FF FF
+*            DS.B   3   This creates three byte-sized locations to be used. Memory would look like: FF FF FF
+*            
 
+bit0        DS.B    1           SEE NOTE UP TOP
+bit1        DS.B    1           SEE NOTE UP TOP
+bit2        DS.B    1           SEE NOTE UP TOP
+bit3        DS.B    1           SEE NOTE UP TOP
+bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
