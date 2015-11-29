@@ -55,7 +55,7 @@ START:                  ; first instruction of program
         
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
         
-        
+        MOVE.W  #$1906, $7000
         
 ******************************************** displays address location***********************************************
 * This displays the address location of the op-code being worked on
@@ -158,9 +158,9 @@ DISPADDR6
         CLR.L   D4
         CLR.L   D5
         CLR.L   D6
-
+        MOVE.W  (A6),D6
         MOVE.B  (A6)+,D2            Moves data at current address to D1, then increments
-        
+  
         MOVE.B  D2,D7
         LSL.W   #8,D7
         
@@ -193,11 +193,381 @@ CODE
         BEQ     SUB
         CMP.B   #$D,D3              Goes to sub but displays as ADD
         BEQ     SUB
-
+        CMP.B   #$1,D3
+        BEQ     MOVB                Goes to movb
+        CMP.B   #$3,D3
+        BEQ     MOVW                Goes to movb
+        CMP.B   #$2,D3
+        BEQ     MOVL                Goes to movb
 
         BRA     INVOPCODE
 
+MOVW
+        LEA MMOVEW, A1
+        MOVE.B  #14, D0
+        TRAP    #15 
+        
+        LSR.B   #1, D2
+        MOVE.B  D2, bit1
+        
+        MOVE.B  (A6), D2
+        LSL.B   #5, D2
+        LSR.B   #5, D2
+        MOVE.B  D2, bit4
+        
+        MOVE.B  (A6), D2
+        LSL.B   #2, D2
+        LSR.B   #5, D2
+        MOVE.B  D2, bit3
+        
+        LSL.W   #7, D6
+        LSR.W   #8, D6 
+        LSR.W   #5, D6 
+        MOVE.B  D6, bit2
+        
+        CMP.B   #$0, bit3           
+        BEQ     MOVBDN1
+        CMP.B   #$1, bit3
+        BEQ     MOVEAN1
+        CMP.B   #$2, bit3
+        BEQ     MOVEIAN1
+        CMP.B   #$3, bit3
+        BEQ     MOVEIANI1
+        CMP.B   #$4, bit3
+        BEQ     MOVEIAND1
+        CMP.B   #$7, bit3
+        BEQ     ADDIMD
 
+
+MOVL
+        LEA MMOVEL, A1
+        MOVE.B  #14, D0
+        TRAP    #15 
+        
+        LSR.B   #1, D2
+        MOVE.B  D2, bit1
+        
+        MOVE.B  (A6), D2
+        LSL.B   #5, D2
+        LSR.B   #5, D2
+        MOVE.B  D2, bit4
+        
+        MOVE.B  (A6), D2
+        LSL.B   #2, D2
+        LSR.B   #5, D2
+        MOVE.B  D2, bit3
+        
+        LSL.W   #7, D6
+        LSR.W   #8, D6 
+        LSR.W   #5, D6 
+        MOVE.B  D6, bit2
+        
+        CMP.B   #$0, bit3           
+        BEQ     MOVBDN1
+        CMP.B   #$1, bit3
+        BEQ     MOVEAN1
+        CMP.B   #$2, bit3
+        BEQ     MOVEIAN1
+        CMP.B   #$3, bit3
+        BEQ     MOVEIANI1
+        CMP.B   #$4, bit3
+        BEQ     MOVEIAND1
+        CMP.B   #$7, bit3
+        BEQ     ADDIMD
+
+MOVB
+        LEA MMOVEB, A1
+        MOVE.B  #14, D0
+        TRAP    #15 
+        
+        LSR.B   #1, D2
+        MOVE.B  D2, bit1
+        
+        MOVE.B  (A6), D2
+        LSL.B   #5, D2
+        LSR.B   #5, D2
+        MOVE.B  D2, bit4
+        
+        MOVE.B  (A6), D2
+        LSL.B   #2, D2
+        LSR.B   #5, D2
+        MOVE.B  D2, bit3
+        
+        LSL.W   #7, D6
+        LSR.W   #8, D6 
+        LSR.W   #5, D6 
+        MOVE.B  D6, bit2
+        
+        CMP.B   #$0, bit3           
+        BEQ     MOVBDN1
+        CMP.B   #$1, bit3
+        BEQ     MOVEAN1
+        CMP.B   #$2, bit3
+        BEQ     MOVEIAN1
+        CMP.B   #$3, bit3
+        BEQ     MOVEIANI1
+        CMP.B   #$4, bit3
+        BEQ     MOVEIAND1
+        CMP.B   #$7, bit3
+        BEQ     ADDIMD
+
+ADDIMD
+    CMP.B   #$0, bit4
+    BEQ     ADDIMD0
+    CMP.B   #$1, bit4
+    BEQ     ADDIMD1
+    CMP.B   #$3, bit4
+    BEQ     ADDIMD3
+
+ADDIMD0
+    * TODO 
+ADDIMD1 
+    * TODO
+ADDIMD3
+    * TODO    
+MOVEAN1
+    LEA TAB, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit4, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA COMMA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    CMP.B   #$0,bit2
+    BEQ     MOVBDN2
+    CMP.B   #$2, bit2 
+    BEQ     MOVIAN2
+    CMP.B   #$3, bit2 
+    BEQ     MOVIANI2
+    CMP.B   #$4, bit2 
+    BEQ     MOVIAND2
+    
+MOVEIAN1
+    LEA TAB, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA OPENBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit4, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA CLOSEBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA COMMA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    CMP.B   #$0,bit2
+    BEQ     MOVBDN2
+    CMP.B   #$2, bit2 
+    BEQ     MOVIAN2
+    CMP.B   #$3, bit2 
+    BEQ     MOVIANI2
+    CMP.B   #$4, bit2 
+    BEQ     MOVIAND2
+
+MOVEIANI1
+    LEA TAB, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA OPENBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit4, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA CLOSEBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA POS, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA COMMA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    CMP.B   #$0,bit2
+    BEQ     MOVBDN2
+    CMP.B   #$2, bit2 
+    BEQ     MOVIAN2
+    CMP.B   #$3, bit2 
+    BEQ     MOVIANI2
+    CMP.B   #$4, bit2 
+    BEQ     MOVIAND2
+
+MOVEIAND1
+    LEA TAB, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA NEG, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA OPENBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit4, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA CLOSEBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA COMMA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    CMP.B   #$0,bit2
+    BEQ     MOVBDN2
+    CMP.B   #$2, bit2 
+    BEQ     MOVIAN2
+    CMP.B   #$3, bit2 
+    BEQ     MOVIANI2
+    CMP.B   #$4, bit2 
+    BEQ     MOVIAND2
+
+MOVBDN1
+    LEA TAB, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA DISPD, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit4, D1
+    MOVE.B  #3,D0
+    TRAP    #15
+    
+    LEA COMMA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    CMP.B   #$0,bit2
+    BEQ     MOVBDN2
+    CMP.B   #$2, bit2 
+    BEQ     MOVIAN2
+    CMP.B   #$3, bit2 
+    BEQ     MOVIANI2
+    CMP.B   #$4, bit2 
+    BEQ     MOVIAND2
+    
+MOVIAN2
+    LEA OPENBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit1, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA CLOSEBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  (A6)+, $7500            * Kind of sketch but makes it work 
+    BRA     ENDNEWLINE
+
+MOVIANI2
+    LEA OPENBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit1, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA CLOSEBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA POS, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  (A6)+, $7500            * Kind of sketch but makes it work 
+    BRA     ENDNEWLINE
+
+MOVIAND2
+    LEA NEG, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA OPENBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    LEA DISPA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  bit1, D1
+    MOVE.B  #3, D0
+    TRAP    #15
+    
+    LEA CLOSEBRA, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+
+    MOVE.B  (A6)+, $7500            * Kind of sketch but makes it work 
+    BRA     ENDNEWLINE
+
+MOVBDN2
+    LEA DISPD, A1
+    MOVE.B  #14,D0
+    TRAP    #15
+        
+    MOVE.B  bit1, D1
+    MOVE.B  #3,D0
+    TRAP    #15   
+    
+    MOVE.B  (A6)+, $7500            * Kind of sketch but makes it work 
+    BRA     ENDNEWLINE
+    
+    
 ******************************************************************************************************
 *   Immediate data arithmetic operations
 *   SUBI
@@ -1230,6 +1600,9 @@ MLONG       DC.B    'L ',0
 MDN         DC.B    'D',0
 MAN         DC.B    'A',0
 
+MMOVEB      DC.B    'MOVE.B',0
+MMOVEW      DC.B    'MOVE.W',0
+MMOVEL      DC.B    'MOVE.L',0
 MDATA       DC.B    'DATA',0
 MSUB        DC.B    'SUB.',0
 MSUBA       DC.B    'SUBA.',0
@@ -1260,6 +1633,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
