@@ -1,0 +1,45 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.04
+Created On: 11/11/2015 1:26:00 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000                             8  START:                  ; first instruction of program
+00001000                             9  
+00001000                            10  * Code for output 
+00001000  43F9 00001018             11      LEA     GREETING,A1
+00001006  103C 000E                 12      MOVE.B  #14,D0
+0000100A  4E4F                      13      TRAP    #15
+0000100C                            14      
+0000100C                            15  * Code for input
+0000100C  103C 0004                 16      MOVE.B  #4,D0
+00001010  4E4F                      17      TRAP    #15    
+00001012                            18  
+00001012  103C 0009                 19      MOVE.B  #9,D0
+00001016  4E4F                      20      TRAP    #15
+00001018                            21  
+00001018                            22  
+00001018                            23  * Put variables and constants here
+00001018                            24  
+00001018  =0000000D                 25  CR          EQU     $0D
+00001018  =0000000A                 26  LF          EQU     $0A
+00001018= 48 65 6C 6C 6F 20 ...     27  GREETING    DC.B    'Hello and welcome to the dissassembler!',CR,LF
+00001041= 50 6C 65 61 73 65 ...     28              DC.B    'Please enter an andress:',CR,LF, 0   
+0000105C                            29      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CR                  D
+GREETING            1018
+LF                  A
+START               1000
