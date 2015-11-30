@@ -1,6 +1,6 @@
 00003000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.15.04
-Created On: 11/29/2015 12:33:53 AM
+Created On: 11/30/2015 4:56:14 AM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :Hello World
@@ -13,79 +13,80 @@ Created On: 11/29/2015 12:33:53 AM
 00003000  1806                       9          MOVE.B  D6, D4
 00003002  3846                      10          MOVEA.W  D6, A4
 00003004  48E3 F5FA                 11          MOVEM.L a0-a4/a6/d0-d3/d5/d7, -(A3)
-00003008  CFC6                      12          MULS.W  D6, D7
-0000300A  85C3                      13          DIVS.W   D3 ,D2
-0000300C  4443                      14          NEG.W      D3
-0000300E  E76A                      15          LSL     D3, D2 
-00003010  E66A                      16          LSR     D3, D2 
-00003012  0702                      17          BTST  D3, D2 
-00003014  60EA                      18          BRA START 
-00003016  4E75                      19          RTS
-00003018                            20           
-00003018                            21          
-00003018  3A0C                      22          MOVE.W  A4, D5
-0000301A  3A4C                      23          MOVEA.W  A4, A5
-0000301C                            24         
-0000301C                            25         
-0000301C                            26         
-0000301C  1C13                      27          MOVE.B  (A3),   D6
-0000301E  3C53                      28          MOVEA.W  (A3),   A6
-00003020  8DD3                      29          DIVS.W  (A3) , D6   
-00003022  4453                      30          NEG.W    (A3)
-00003024  E3D3                      31          LSL     (A3)
-00003026  E2D3                      32          LSR     (A3)
-00003028  0713                      33          BTST  D3, (A3)
-0000302A  4E93                      34          JSR     (A3)
-0000302C                            35   
-0000302C  163C 0010                 36          MOVE.B  #16, D3  
-00003030  367C 0010                 37          MOVEA.W  #16, A3  
-00003034  CBFC 04DD                 38          MULS.W  #1245,    D5 
-00003038  89FC 0A4B                 39          DIVS.W  #2635, D4 
-0000303C                            40          
-0000303C                            41           
-0000303C  141C                      42          MOVE.B  (A4)+,  D2
-0000303E  C5DC                      43          MULS.W  (A4)+, D2
-00003040  85DB                      44          DIVS.W  (A3)+,  D2 
-00003042  445B                      45          NEG.W     (A3)+
-00003044  E3DB                      46          LSL       (A3)+
-00003046  E2DB                      47          LSR       (A3)+
-00003048  051B                      48          BTST   D2, (A3)+
-0000304A                            49          
-0000304A  1222                      50          MOVE.B  -(A2),  D1
-0000304C  C3E2                      51          MULS.W  -(A2),  D1
-0000304E  83E2                      52          DIVS.W   -(A2),  D1
-00003050  4462                      53          NEG.W      -(A2)
-00003052  E3E2                      54          LSL       -(A2)
-00003054  E2E2                      55          LSR       -(A2)
-00003056  0322                      56          BTST      D1, -(A2)
-00003058                            57          
-00003058  1439 00004501             58          MOVE.B  $4501.L,    D2
-0000305E  CBF9 00001245             59          MULS.W  $1245.L,    D5
-00003064  8BF9 00001233             60          DIVS.W  $1233.L, D5
-0000306A  4479 00005641             61          NEG.W   $5641.L
-00003070  E3F9 00005641             62          LSL      $5641.L
-00003076  E2F9 00005641             63          LSR      $5641.L
-0000307C  0B39 00005454             64          BTST    D5, $5454.L 
-00003082  4EB9 00005454             65          JSR $5454.L 
-00003088                            66          
-Line 67 WARNING: Forcing SHORT addressing disables range checking of extension word
-00003088  1438 4501                 67          MOVE.B  $4501.W,    D2
+00003008  9FC6                      12          SUBA.L  D6,A7
+0000300A  CFC6                      13          MULS.W  D6, D7
+0000300C  85C3                      14          DIVS.W   D3 ,D2
+0000300E  4443                      15          NEG.W      D3
+00003010  E76A                      16          LSL     D3, D2 
+00003012  E66A                      17          LSR     D3, D2 
+00003014  0702                      18          BTST  D3, D2 
+00003016  60E8                      19          BRA START 
+00003018  4E75                      20          RTS
+0000301A                            21           
+0000301A                            22          
+0000301A  3A0C                      23          MOVE.W  A4, D5
+0000301C  3A4C                      24          MOVEA.W  A4, A5
+0000301E                            25         
+0000301E                            26         
+0000301E                            27         
+0000301E  1C13                      28          MOVE.B  (A3),   D6
+00003020  3C53                      29          MOVEA.W  (A3),   A6
+00003022  8DD3                      30          DIVS.W  (A3) , D6   
+00003024  4453                      31          NEG.W    (A3)
+00003026  E3D3                      32          LSL     (A3)
+00003028  E2D3                      33          LSR     (A3)
+0000302A  0713                      34          BTST  D3, (A3)
+0000302C  4E93                      35          JSR     (A3)
+0000302E                            36   
+0000302E  163C 0010                 37          MOVE.B  #16, D3  
+00003032  367C 0010                 38          MOVEA.W  #16, A3  
+00003036  CBFC 04DD                 39          MULS.W  #1245,    D5 
+0000303A  89FC 0A4B                 40          DIVS.W  #2635, D4 
+0000303E                            41          
+0000303E                            42           
+0000303E  141C                      43          MOVE.B  (A4)+,  D2
+00003040  C5DC                      44          MULS.W  (A4)+, D2
+00003042  85DB                      45          DIVS.W  (A3)+,  D2 
+00003044  445B                      46          NEG.W     (A3)+
+00003046  E3DB                      47          LSL       (A3)+
+00003048  E2DB                      48          LSR       (A3)+
+0000304A  051B                      49          BTST   D2, (A3)+
+0000304C                            50          
+0000304C  1222                      51          MOVE.B  -(A2),  D1
+0000304E  C3E2                      52          MULS.W  -(A2),  D1
+00003050  83E2                      53          DIVS.W   -(A2),  D1
+00003052  4462                      54          NEG.W      -(A2)
+00003054  E3E2                      55          LSL       -(A2)
+00003056  E2E2                      56          LSR       -(A2)
+00003058  0322                      57          BTST      D1, -(A2)
+0000305A                            58          
+0000305A  1439 00004501             59          MOVE.B  $4501.L,    D2
+00003060  CBF9 00001245             60          MULS.W  $1245.L,    D5
+00003066  8BF9 00001233             61          DIVS.W  $1233.L, D5
+0000306C  4479 00005641             62          NEG.W   $5641.L
+00003072  E3F9 00005641             63          LSL      $5641.L
+00003078  E2F9 00005641             64          LSR      $5641.L
+0000307E  0B39 00005454             65          BTST    D5, $5454.L 
+00003084  4EB9 00005454             66          JSR $5454.L 
+0000308A                            67          
 Line 68 WARNING: Forcing SHORT addressing disables range checking of extension word
-0000308C  CBF8 1245                 68          MULS.W  $1245.W,    D5
+0000308A  1438 4501                 68          MOVE.B  $4501.W,    D2
 Line 69 WARNING: Forcing SHORT addressing disables range checking of extension word
-00003090  8BF8 7545                 69          DIVS.W  $7545.W,   D5
+0000308E  CBF8 1245                 69          MULS.W  $1245.W,    D5
 Line 70 WARNING: Forcing SHORT addressing disables range checking of extension word
-00003094  4478 5641                 70          NEG.W   $5641.W   
+00003092  8BF8 7545                 70          DIVS.W  $7545.W,   D5
 Line 71 WARNING: Forcing SHORT addressing disables range checking of extension word
-00003098  E3F8 5641                 71          LSL      $5641.W
+00003096  4478 5641                 71          NEG.W   $5641.W   
 Line 72 WARNING: Forcing SHORT addressing disables range checking of extension word
-0000309C  E2F8 5641                 72          LSR      $5641.W
+0000309A  E3F8 5641                 72          LSL      $5641.W
 Line 73 WARNING: Forcing SHORT addressing disables range checking of extension word
-000030A0  0B38 5454                 73          BTST    D5, $5454.W 
+0000309E  E2F8 5641                 73          LSR      $5641.W
 Line 74 WARNING: Forcing SHORT addressing disables range checking of extension word
-000030A4  4EB8 5454                 74          JSR $5454.W 
-000030A8                            75  
-000030A8                            76          END     $3000      
+000030A2  0B38 5454                 74          BTST    D5, $5454.W 
+Line 75 WARNING: Forcing SHORT addressing disables range checking of extension word
+000030A6  4EB8 5454                 75          JSR $5454.W 
+000030AA                            76  
+000030AA                            77          END     $3000      
 
 No errors detected
 8 warnings generated
