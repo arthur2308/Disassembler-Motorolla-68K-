@@ -70,7 +70,7 @@ START:                  ; first instruction of program
         *MOVE.L  #$0,A1             This clears the memory at A1, not sure why i didn't it but its probably important
         
         *MOVE.L  #$6700F0D8,$7000
-        MOVE.L  #$4E71F0D8,$7000
+        MOVE.W  #$4E71,$7000         NOP
 
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
         
@@ -1403,14 +1403,18 @@ SUB1    MOVE.B  D1,bit1
 * After spliting the op-code into SUB's defined groupings
 *   This figures out which operation it is and goes to that sub-routine
 
+        * This checks if bit0 is C which is either AND or MULS
+        CMP.B   #$C,bit0
+        BNE     SUBACHECK
+        CMP.B   #$7,bit2                    If bit0 is C and bit2 is 7, then it will branch to MULS instead
+        BEQ     MULSW                       AND will use SUB's routine
+
+SUBACHECK
         * This will display SUBA instead  -- check this later
         CMP.B   #$3,bit2
         BEQ     SUBA
         CMP.B   #$7,bit2
         BEQ     SUBA
-        * Both muls and SUBA branch from #7 -- check it out
-        * check out SUBPRINT to see how i fixed it
-        * BEQ     MULSW
 
         * This will find the size and stuff
         CMP.B   #$0,bit2
@@ -1633,15 +1637,9 @@ SUBPRINT
         CMP.B   #$9,bit0                Prints SUB
         BEQ     SUBPRINTSUB
         CMP.B   #$C,bit0                Prints AND
-        BEQ     SUBPRINTC
+        BEQ     SUBPRINTAND
         CMP.B   #$D,bit0                Prints ADD
         BEQ     SUBPRINTADD
-
-SUBPRINTC
-        CMP.B   #$7,bit2                If bit2 is 7, op-code is MULS
-        BEQ     SUBPRINTMULS
-        
-        BRA     SUBPRINTAND             Else, op-code is AND
 
 SUBPRINTSUB   * Displays 'SUB.' 
         LEA     MSUB,A1
@@ -1657,12 +1655,6 @@ SUBPRINTAND   * Displays 'AND.'
 
 SUBPRINTADD   * Displays 'ADD.' 
         LEA     MADD,A1
-        MOVE.B  #14,D0
-        TRAP    #15
-        BRA     SUBPRINTEND
-
-SUBPRINTMULS
-        LEA     MMUL,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     SUBPRINTEND
@@ -2209,7 +2201,7 @@ MSUBI       DC.B    'SUBI.',0
 MORI        DC.B    'ORI.',0
 MNOT        DC.B    'NOT.',0
 MMUL        DC.B    'MULS.',0
-MNEG
+MNEG        DC.B    'NEG',0
 
 MBEQ        DC.B    'BEQ',0
 MBNE        DC.B    'BNE',0
@@ -2242,6 +2234,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
