@@ -35,7 +35,7 @@
 * 
 * MOVE      MISSES  LONGADRESS(L&W) and IMEDIATE DATA     INVALID OPCODE                       1806
 * MOVEA     MISSES  LONGADRESS(L&W) and IMEDIATE DATA     INVALID OPCODE                       3846
-* MULS      MISSES  LONGADRESS(L&W) and IMEDIATE DATA     INVALID OPCODE        MULS LONG?     CFC6
+* MULS      MISSES  LONGADRESS(L&W) and IMEDIATE DATA     INVALID OPCODE                       CFC6
 * DIVS      MISSES  LONGADRESS(L&W) and IMEDIATE DATA     INVALID OPCODE                       85C3
 * NEG       MISSES  LONGADRESS(L&W) and IMEDIATE DATA     INVALID OPCODE                       4443
 * LSL       MISSES  EFFECTIVE ADDRESSES                   INVALID OPCODE                       E76A
@@ -70,11 +70,11 @@ START:                  ; first instruction of program
         *MOVE.L  #$0,A1             This clears the memory at A1, not sure why i didn't it but its probably important
         
         *MOVE.L  #$6700F0D8,$7000
-        MOVE.W  #$4E71,$7000         NOP
+        *MOVE.W  #$4E71,$7000         NOP
 
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
         
-        *MOVE.W  #$E66A,$7000
+        MOVE.W  #$E3D3,$7000
 
         
 ******************************************** displays address location***********************************************
@@ -238,8 +238,6 @@ CODE
         BRA     INVOPCODE
 
 MOVW
-        
-        
         LSR.B   #1,D2
         MOVE.B  D2,bit1
         
@@ -277,8 +275,6 @@ MOVW
         BEQ     MOVEIAND1
         CMP.B   #$7,bit3
         BEQ     ADDIMD
-
-        * Add INVOP
 
 MOVEAW
         LEA MMOVEAW,A1
@@ -337,7 +333,6 @@ MOVL
         CMP.B   #$7,bit3
         BEQ     ADDIMD
 
-
 MOVEAL
         LEA MMOVEAL,A1
         MOVE.B  #14,D0
@@ -379,6 +374,8 @@ MOVB
         LSR.W   #5,D6 
         MOVE.B  D6,bit2
         
+        *MOVE.B  #$1,D4
+        
         CMP.B   #$0,bit3           
         BEQ     MOVBDN1
         CMP.B   #$1,bit3
@@ -391,21 +388,54 @@ MOVB
         BEQ     MOVEIAND1
         CMP.B   #$7,bit3
         BEQ     ADDIMD
+        
+        BRA     INVOP
 
 ADDIMD
+    LEA     TAB,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
     CMP.B   #$0,bit4
     BEQ     ADDIMD0
     CMP.B   #$1,bit4
     BEQ     ADDIMD1
-    CMP.B   #$3,bit4
-    BEQ     ADDIMD3
+    CMP.B   #$4,bit4
+    BEQ     ADDIMD4
 
 ADDIMD0
-    * TODO 
+    MOVE.B  #$1,D4
+    LEA     HANDLEDES,A2
+    BRA     DISPEA
 ADDIMD1 
-    * TODO
-ADDIMD3
-    * TODO    
+    MOVE.B  #$2,D4
+    LEA     HANDLEDES,A2
+    BRA     DISPEA
+ADDIMD4
+    LEA     HASH,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    LEA     HANDLEDES,A2
+    BRA     DISPEA 
+    
+HANDLEDES
+    LEA     COMMA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    CMP.B   #$0,bit2
+    BEQ     MOVBDN2
+    CMP.B   #$1,bit2
+    BEQ     MOVEAN2
+    CMP.B   #$2,bit2 
+    BEQ     MOVIAN2
+    CMP.B   #$3,bit2 
+    BEQ     MOVIANI2
+    CMP.B   #$4,bit2 
+    BEQ     MOVIAND2
+    CMP.B   #$5,D5
+    BEQ     MOVBDN2
 MOVEAN1
     LEA TAB,A1
     MOVE.B  #14,D0
@@ -457,6 +487,9 @@ MOVEIAN1
     MOVE.B  #14,D0
     TRAP    #15
     
+    CMP.B   #$3,D4
+    BEQ     ENDNEWLINE
+    
     LEA COMMA,A1
     MOVE.B  #14,D0
     TRAP    #15
@@ -499,6 +532,9 @@ MOVEIANI1
     MOVE.B  #14,D0
     TRAP    #15
     
+    CMP.B   #$3,D5
+    BEQ     ENDNEWLINE
+        
     LEA COMMA,A1
     MOVE.B  #14,D0
     TRAP    #15
@@ -540,6 +576,9 @@ MOVEIAND1
     LEA CLOSEBRA,A1
     MOVE.B  #14,D0
     TRAP    #15
+    
+    CMP.B   #$4,D5
+    BEQ     ENDNEWLINE
     
     LEA COMMA,A1
     MOVE.B  #14,D0
@@ -766,7 +805,8 @@ MULSW
 
          
 DIVSW               
-        MOVE.B  D6,D2
+        *MOVE.B  D6,D2
+        MOVE.B  (A6)+,D2
         LSL.B   #5,D2
         LSR.B   #5,D2
         MOVE.B  D2,bit4
@@ -828,7 +868,7 @@ NEGW
         MOVE    #14,D1
         TRAP    #15
         
-        MOVE.B  #$4,D5
+        MOVE.B  #$3,D4
         
         CMP.B   #$0,bit2
         BEQ     PRINTBYTE
@@ -915,6 +955,8 @@ LSLR
         LSR.W   #7,D7
         MOVE.B  D7,bit1   
     
+        MOVE.B  D6,D4
+        
         LSL.W   #4,D6
         LSR.W   #8,D6 
         LSR.W   #5,D6
@@ -936,8 +978,29 @@ PRINTLSL
         BEQ     PRINTW
         CMP.B   #$2,bit2
         BEQ     PRINTL
+        BRA     LSLRMEM
         
+LSLRMEM
+        
+        LSL.B   #2,D4
+        LSR.B   #5,D4
+        MOVE.B  D4,bit3
+        
+        MOVE.B  #$3,D4
+        
+        CMP.B   #$2,bit3
+        BEQ     MOVEIAN1
+        CMP.B   #$3,bit3
+        BEQ     MOVEIANI1
+        CMP.B   #$4,bit3
+        BEQ     MOVEIAND1
+        CMP.B   #$7,bit3
+        BEQ     ADDIMD
 PRINTB
+        LEA MDOT,A1
+        MOVE    #14,D0
+        TRAP    #15
+
         LEA MBYTE,A1
         MOVE    #14,D0
         TRAP    #15
@@ -950,6 +1013,10 @@ PRINTB
         BEQ     MOVBDN1
 
 PRINTW 
+        LEA MDOT,A1
+        MOVE    #14,D0
+        TRAP    #15
+
         LEA MWORD,A1
         MOVE    #14,D0
         TRAP    #15
@@ -962,6 +1029,10 @@ PRINTW
         BEQ     MOVBDN1
 
 PRINTL
+        LEA MDOT,A1
+        MOVE    #14,D0
+        TRAP    #15
+
         LEA MLONG,A1
         MOVE    #14,D0
         TRAP    #15
@@ -978,7 +1049,7 @@ PRINTLSLRCOUNT
         MOVE    #14,D0
         TRAP    #15
         
-        LEA HASH,A2
+        LEA HASH,A1
         MOVE    #14,D0
         TRAP    #15
         
@@ -1003,6 +1074,7 @@ PRINTLSR
         BEQ     PRINTW
         CMP.B   #$2,bit2
         BEQ     PRINTL
+        BRA     LSLRMEM
 
 ******************************************************************************************************
 *   Branch, branch to subroutine, and branch conditionally
@@ -2174,6 +2246,7 @@ DISPD       DC.B    'D',0
 DISPE       DC.B    'E',0
 DISPF       DC.B    'F',0
 
+MDOT        DC.B    '.',0
 MHEX        DC.B    '$',0
 MBYTE       DC.B    'B ',0
 MWORD       DC.B    'W ',0
@@ -2181,8 +2254,8 @@ MLONG       DC.B    'L ',0
 MDN         DC.B    'D',0
 MAN         DC.B    'A',0
 
-MLSL        DC.B    'LSL.',0
-MLSR        DC.B    'LSR.',0
+MLSL        DC.B    'LSL',0
+MLSR        DC.B    'LSR',0
 MMNEGW      DC.B    'NEG.',0
 MMDIVSW     DC.B    'DIVS.W',0
 MMULSW      DC.B    'MULS.W',0
@@ -2207,7 +2280,7 @@ MBEQ        DC.B    'BEQ',0
 MBNE        DC.B    'BNE',0
 MBLT        DC.B    'BLT',0
 MBHI        DC.B    'BHI',0
-MBRA        DC.B    'BHI',0
+MBRA        DC.B    'BRA',0
 MNOP        DC.B    'NOP',0
 
 MERROR      DC.B    'ERROR: Something broke',0
@@ -2234,6 +2307,8 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
+
 
 
 
