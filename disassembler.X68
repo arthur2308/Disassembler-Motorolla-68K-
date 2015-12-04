@@ -29,6 +29,14 @@
 * NOT
 * Bcc
 * BRA   - NOT TESTED
+* CMP
+* CMPI
+* CMPA
+* EOR
+* EORI
+* ADDA
+* RTS
+* 
 * 
 * Display buffer thingy
 *
@@ -73,21 +81,112 @@ START:                  ; first instruction of program
         *MOVE.W  #$4E71,$7000         NOP
 
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
-        
-        MOVE.W  #$E3D3,$7000
 
+        MOVE.L  #$48E3F5FA,$7000
+
+*********************************************************************************************************************
+* Takes in user start and end address
+
+IOSTART
+*   Displays message asking for address
+        LEA     MADDR1,A1           Loads message to retrieve first number
+        BSR     IOGETADDR
+
+        BTST    #0,D4               Checks of the starting address is an odd number
+        BNE     IOERROR4            Throws an error if it is because it will crash
+
+        MOVE.L  D4,D7               Moves starting address to D7 for now
+        LEA     MADDR2,A1           Then grabs the ending address
+        BSR     IOGETADDR
+        CMP.L   D7,D4               Compares the start address to end address
+        BGT     DISPADDR            Continues if start < end
+        BRA     IOERROR1            Error if not
+
+IOGETADDR
+        MOVEA.L A1,A3               Saves the message incase of an error
+        MOVE.B  #14,D0              Prepares to display message
+        TRAP    #15                 Displays message
+
+        CLR     D4                  Clears D4 register to prevent errors
+
+        LEA     startaddr,A1        Uses this memory location to store the data
+        MOVE.B  #2,D0               Trap task 4 reads number from keyboard into D1.L
+        TRAP    #15
+
+        CMP.B   #8,D1               Throws an error if the input is longer than a longword
+        BGT     IOERROR2
+        MOVE.B  D1,D5               Moves the length of the input to D5
+
+IOSTARTLOOP
+        LEA     startaddr,A2        Moves starting address to A2, which will be current addr
         
+IOLOOP
+        MOVE.B  (A2)+,D2            Moves data from current addr to D2
+        SUB.B   #1,D5               Subtract 1 from counter
+        BSR     DEC2HEX             Converts decimal to hex number
+        CMP.B   #$F,D1
+        BEQ     IOERROR3
+
+        MOVE.B  D5,D6               Moves counter to D6 to be manipulated
+        MULS    #4,D6               Multiply by 4 to find number of shifts left
+        
+        LSL.L   D6,D3               Shifts hex left
+        ADD.L   D3,D4               Adds number to new total
+        
+        MOVE.L  #0,D3               Clears D3 to prevent errors
+        
+        CMP.B   #0,D5               Compares counter to 0    
+        BNE     IOLOOP              Otherwise will loop
+        RTS
+
+* Error message for start address greater than end address
+IOERROR1
+        LEA     MIOERR1,A1
+        MOVE.B  #13,D0
+        TRAP    #15
+        BRA     IOSTART
+
+* Error message if user input address is longer than longword
+IOERROR2
+        LEA     MIOERR2,A1
+        MOVE.B  #13,D0
+        TRAP    #15
+        MOVEA.L A3,A1
+        BRA     IOGETADDR
+
+* Error message if user enters non-valid hex numbers
+IOERROR3
+        LEA     MIOERR3,A1
+        MOVE.B  #13,D0
+        TRAP    #15
+        MOVEA.L A3,A1
+        BRA     IOGETADDR
+
+* Error message for odd numbered addresses
+IOERROR4
+        LEA     MIOERR4,A1
+        MOVE.B  #13,D0
+        TRAP    #15
+        BRA     IOSTART
+
 ******************************************** displays address location***********************************************
 * This displays the address location of the op-code being worked on
 * A6 is used as current address
-
-        MOVEA.L #addr1,A6           Moves starting addr into A6 register
+DISPADDR
+        MOVE.L  D7,startaddr
+        MOVE.L  D4,endaddr
+        BSR     CLRDN
+        MOVEA.L startaddr,A6        Moves starting addr into A6 register
         MOVE.B  #dispnum,dispcount  Sets display line counter
+
+        LEA     NEWLINE,A1          Creates a new line in output window
+        MOVE.B  #14,D0
+        TRAP    #15
 
 NEWADDR
         MOVE.L  A6,D7               Loads the current address into D7
-        CMP.L   #addr2,D7           Compares current address to end address
-        BGT     DONE                Branches to done if current address > end address
+        CMP.L   endaddr,D7          Compares current address to end address
+        BGT     ASK4REPEAT          Branches to done if current address > end address
         LEA     DISPADDREND,A2
 
 ************************************************
@@ -223,6 +322,8 @@ CODE
         CMP.B   #$C,D3              Goes to sub but displays as AND
         BEQ     SUB
         CMP.B   #$D,D3              Goes to sub but displays as ADD
+        BEQ     SUB
+        CMP.B   #$B,D3              Goes to sub but displays as CMP or EOR
         BEQ     SUB
         CMP.B   #$1,D3
         BEQ     MOVB                Goes to movb
@@ -1206,6 +1307,10 @@ IMDPRINT
         BEQ     IMDPRINTORI
         CMP.B   #$4,bit1
         BEQ     IMDPRINTSUBI
+        CMP.B   #$A,bit1
+        BEQ     IMDPRINTEORI
+        CMP.B   #$C,bit1
+        BEQ     IMDPRINTCMPI
 
 IMDPRINTORI
         LEA     MORI,A1
@@ -1213,6 +1318,14 @@ IMDPRINTORI
 
 IMDPRINTSUBI
         LEA     MSUBI,A1
+        BRA     IMDPRINTEND
+
+IMDPRINTEORI
+        LEA     MEORI,A1
+        BRA     IMDPRINTEND
+
+IMDPRINTCMPI
+        LEA     MCMPI,A1
         BRA     IMDPRINTEND
 
 IMDPRINTEND
@@ -1312,6 +1425,8 @@ MISCBIT3
         * D2 is bit3
         CMP.B   #$1,D2              Branches to NOP
         BEQ     MISCNOP
+        CMP.B   #$5,D2              Branches to NOP
+        BEQ     MISCRTS
         BRA     INVOP
 
 ******************************************************
@@ -1319,6 +1434,16 @@ MISCBIT3
 * No operation
 MISCNOP
         LEA     MNOP,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        BRA     ENDNEWLINE          Goes to next opcode
+
+******************************************************
+* RTS
+* Return to sub routine
+MISCRTS
+        LEA     MRTS,A1
         MOVE.B  #14,D0
         TRAP    #15
 
@@ -1581,7 +1706,7 @@ SUBSIZE4
         MOVE.B  #14,D0
         TRAP    #15
 
-        BSR     SUBERRORTEST1
+        *BSR     SUBERRORTEST1
 
         LEA     SUBSIZE41,A2
         BRA     SUBDN
@@ -1597,7 +1722,7 @@ SUBSIZE42
 *************************************************
 *   101 word    DN,EA
 SUBSIZE5
-        BSR     SUBERRORTEST1               * This does error testing
+        *BSR     SUBERRORTEST1               * This does error testing
         BSR     SUBPRINT                    * Prints out 'SUB.'
         LEA     MWORD,A1
         MOVE.B  #14,D0
@@ -1620,7 +1745,7 @@ SUBSIZE52
 *************************************************
 *   110 long    DN,EA
 SUBSIZE6
-        BSR     SUBERRORTEST1               * This does error testing
+        *BSR     SUBERRORTEST1               * This does error testing
         BSR     SUBPRINT                    * Prints out 'SUB.'
         LEA     MLONG,A1
         MOVE.B  #14,D0
@@ -1629,7 +1754,7 @@ SUBSIZE6
         MOVE.B  #14,D0
         TRAP    #15
 
-        BSR     SUBERRORTEST1
+        *BSR     SUBERRORTEST1
 
         LEA     SUBSIZE61,A2
         BRA     SUBDN
@@ -1646,10 +1771,33 @@ SUBSIZE62
 *   This section is for SUBA
 *   Displays 'SUBA.' then decodes the op-code as SUBA
 SUBA
+        CMP.B   #$9,bit0
+        BEQ     SUBPRINTSUBA
+        CMP.B   #$B,bit0
+        BEQ     SUBPRINTCMPA
+        CMP.B   #$D,bit0
+        BEQ     SUBPRINTADDA
+
+
+SUBPRINTSUBA
         LEA     MSUBA,A1                    Displays 'SUBA.'
         MOVE.B  #14,D0
         TRAP    #15
-        
+        BRA     SUBACONT
+
+SUBPRINTCMPA
+        LEA     MCMPA,A1                    Displays 'SUBA.'
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     SUBACONT
+
+SUBPRINTADDA
+        LEA     MADDA,A1                    Displays 'SUBA.'
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     SUBACONT
+
+SUBACONT
         * Does the rest of SUBA
         CMP.B   #$3,bit2
         BEQ     SUBSIZE7
@@ -1708,6 +1856,8 @@ SUBJMPA2
 SUBPRINT
         CMP.B   #$9,bit0                Prints SUB
         BEQ     SUBPRINTSUB
+        CMP.B   #$B,bit0                Prints CMP or EOR
+        BEQ     SUBPRINTB
         CMP.B   #$C,bit0                Prints AND
         BEQ     SUBPRINTAND
         CMP.B   #$D,bit0                Prints ADD
@@ -1727,6 +1877,22 @@ SUBPRINTAND   * Displays 'AND.'
 
 SUBPRINTADD   * Displays 'ADD.' 
         LEA     MADD,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     SUBPRINTEND
+
+SUBPRINTB
+        CMP.B   #$4,bit2
+        BLT     SUBPRINTEOR
+
+SUBPRINTCMP   * Displays 'CMP.' 
+        LEA     MCMP,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     SUBPRINTEND
+
+SUBPRINTEOR   * Displays 'EOR.' 
+        LEA     MEOR,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     SUBPRINTEND
@@ -2070,6 +2236,18 @@ DISPEA5
 
 ***   display EA ends here
 
+*******************************************************************
+* Clears all of the data registers
+CLRDN
+        CLR.L   D0
+        CLR.L   D1
+        CLR.L   D2
+        CLR.L   D3
+        CLR.L   D4
+        CLR.L   D5
+        CLR.L   D6
+        CLR.L   D7
+        RTS
 
 ********************************************************************
 * Invalid op-code handling
@@ -2166,6 +2344,10 @@ ENDNEWLINE
         TRAP    #15
         CLR.L   D1                  Clears D1 incase user decides to input something
 
+        LEA     NEWLINE,A1          Creates a new line in output window
+        MOVE.B  #14,D0
+        TRAP    #15
+
         MOVE.B  #dispnum,dispcount  Resets display counter
         BRA     NEWADDR             Loops back to beginning
 
@@ -2210,6 +2392,153 @@ PRINT   MOVE.B  #14,D0              Sets trap task to #14
         TRAP    #15                 Prints out message in A1
         JMP     (A3)
 
+******************************************************************************
+* Converts decimal input to hex
+* INPUT: Decimal inside D2
+* OUTPUT: HEX into D3
+*   Converts number in decimal to hex        
+DEC2HEX
+        CMP.B   #$30,D2             0
+        BEQ     D2HZERO
+        CMP.B   #$31,D2             1
+        BEQ     D2HONE
+        CMP.B   #$32,D2             2
+        BEQ     D2HTWO
+        CMP.B   #$33,D2             3
+        BEQ     D2HTHREE
+        CMP.B   #$34,D2             4
+        BEQ     D2HFOUR
+        CMP.B   #$35,D2             5
+        BEQ     D2HFIVE
+        CMP.B   #$36,D2             6
+        BEQ     D2HSIX
+        CMP.B   #$37,D2             7
+        BEQ     D2HSEVEN
+        CMP.B   #$38,D2             8
+        BEQ     D2HEIGHT
+        CMP.B   #$39,D2             9
+        BEQ     D2HNINE
+        CMP.B   #$41,D2             A
+        BEQ     D2HHEXA
+        CMP.B   #$42,D2             B
+        BEQ     D2HHEXB
+        CMP.B   #$43,D2             C
+        BEQ     D2HHEXC
+        CMP.B   #$44,D2             D
+        BEQ     D2HHEXD
+        CMP.B   #$45,D2             E
+        BEQ     D2HHEXE
+        CMP.B   #$46,D2             F
+        BEQ     D2HHEXF
+        CMP.B   #$61,D2             A
+        BEQ     D2HHEXA
+        CMP.B   #$62,D2             B
+        BEQ     D2HHEXB
+        CMP.B   #$63,D2             C
+        BEQ     D2HHEXC
+        CMP.B   #$64,D2             D
+        BEQ     D2HHEXD
+        CMP.B   #$65,D2             E
+        BEQ     D2HHEXE
+        CMP.B   #$66,D2             F
+        BEQ     D2HHEXF
+
+        * User entered a non-hex character
+        * Moves F to D1 to indicate error before returning
+        MOVE.B  #$F,D1
+        RTS
+
+*   Moves the appropiate hex number to D3
+D2HZERO MOVE.B  #$0,D3
+        RTS
+
+D2HONE
+        MOVE.B  #$1,D3
+        RTS
+
+D2HTWO
+        MOVE.B  #$2,D3
+        RTS
+
+D2HTHREE
+        MOVE.B  #$3,D3
+        RTS
+
+D2HFOUR
+        MOVE.B  #$4,D3
+        RTS
+
+D2HFIVE
+        MOVE.B  #$5,D3
+        RTS
+
+D2HSIX
+        MOVE.B  #$6,D3
+        RTS
+
+D2HSEVEN
+        MOVE.B  #$7,D3
+        RTS
+
+D2HEIGHT
+        MOVE.B  #$8,D3
+        RTS
+
+D2HNINE
+        MOVE.B  #$9,D3
+        RTS
+
+D2HHEXA
+        MOVE.B  #$A,D3
+        RTS
+
+D2HHEXB
+        MOVE.B  #$B,D3
+        RTS
+
+D2HHEXC
+        MOVE.B  #$C,D3
+        RTS
+
+D2HHEXD
+        MOVE.B  #$D,D3
+        RTS
+
+D2HHEXE
+        MOVE.B  #$E,D3
+        RTS
+
+D2HHEXF
+        MOVE.B  #$F,D3
+        RTS
+
+*************************************************************************************************
+ASK4REPEAT
+        LEA     NEWLINE,A1          Creates a new line in output window
+        MOVE.B  #14,D0
+        TRAP    #15
+ASK4REPEAT2
+        LEA     MREPEAT,A1          Asks user if they want to start over or exit
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     bit4,A1             User has to enter Y to start over
+        MOVE.B  #2,D0               N to exit
+        TRAP    #15
+
+        MOVE.B  bit4,D1             User input was stored in bit4
+        CMP.B   #$59,D1             Char Y
+        BEQ     IOSTART
+        CMP.B   #$79,D1             Char y
+        BEQ     IOSTART
+        CMP.B   #$4E,D1             Char N
+        BEQ     DONE
+        CMP.B   #$6E,D1             Char n
+        BEQ     DONE
+        BRA     ASK4REPEAT2          Asks again if user enters invalid character
+
+
+**************************************************************************************************
 ERROR   LEA     MERROR,A1
         MOVE.B  #14,D0
         TRAP    #15
@@ -2275,6 +2604,12 @@ MORI        DC.B    'ORI.',0
 MNOT        DC.B    'NOT.',0
 MMUL        DC.B    'MULS.',0
 MNEG        DC.B    'NEG',0
+MCMP        DC.B    'CMP.',0
+MCMPI       DC.B    'CMPI.',0
+MCMPA       DC.B    'CMPA.',0
+MEOR        DC.B    'EOR.',0
+MEORI       DC.B    'EORI.',0
+MADDA       DC.B    'ADDA.',0
 
 MBEQ        DC.B    'BEQ',0
 MBNE        DC.B    'BNE',0
@@ -2282,7 +2617,15 @@ MBLT        DC.B    'BLT',0
 MBHI        DC.B    'BHI',0
 MBRA        DC.B    'BRA',0
 MNOP        DC.B    'NOP',0
+MRTS        DC.B    'RTS',0
 
+MADDR1      DC.B    'Lemme get dat start address, fam: ',0
+MADDR2      DC.B    'Gimme that end address too homie: ',0
+MREPEAT     DC.B    'Tryna go again or what? (Y/N): ',0
+MIOERR1     DC.B    'End address must be after the start address, try again.',0
+MIOERR2     DC.B    'Address cannot be longer than longword, try again.',0
+MIOERR3     DC.B    'Re-enter valid hex numbers.',0
+MIOERR4     DC.B    'Address must be an even number.',0
 MERROR      DC.B    'ERROR: Something broke',0
 MDONE       DC.B    'COMPLETE: IT DID NOT CRASH',0
 MCONT       DC.B    '**PRESS ENTER TO CONTINUE**',0
@@ -2299,6 +2642,9 @@ MCONT       DC.B    '**PRESS ENTER TO CONTINUE**',0
 
 dispcount   DS.B    1           Used to count display lines
 
+startaddr   DS.L    1
+endaddr     DS.L    1
+
 bit0        DS.B    1           SEE NOTE UP TOP
 bit1        DS.B    1           SEE NOTE UP TOP
 bit2        DS.B    1           SEE NOTE UP TOP
@@ -2307,6 +2653,9 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
+
+
 
 
 
