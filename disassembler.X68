@@ -36,10 +36,11 @@
 * EORI
 * ADDA
 * RTS
-* 
+* MOVEM
 * 
 * Display buffer thingy
-*
+* IO for user input
+* IO for continue/exit
 * 
 * MOVE                  1806        LONGWORD ADDRESS AND IMMEDIATE DATA FOR DESTINATION ARE NOT IMPLEMETED
 * MOVEA                 3846
@@ -69,7 +70,7 @@ START:                  ; first instruction of program
         
 
 
-        *   this stores some test EA into memory
+        *   this stores some test EA into memory m,
         *LEA     addr1,A1
         *MOVE.W  #$0440,(A1)+        *917C
         *MOVE.W  #$917C,(A1)+       
@@ -85,7 +86,9 @@ START:                  ; first instruction of program
 
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
 
-        MOVE.L  #$48E3F5FA,$7000
+        MOVE.L  #$48E3FAF5,$7000
+        MOVE.L  #$4CF8CDD9,$7004
+        MOVE.W  #$4000,$7008
 
 *********************************************************************************************************************
 * Takes in user start and end address
@@ -1569,7 +1572,7 @@ MISC
         BEQ     MISCNOT
         CMP.B   #$E,D5              Goes to section to check for NOP or JSR
         BEQ     MISCBIT2
-        BRA     INVOP
+        BRA     MISCCHECKM
 
 MISCBIT2
         * D3 is bit2
@@ -1584,6 +1587,18 @@ MISCBIT3
         CMP.B   #$5,D2              Branches to NOP
         BEQ     MISCRTS
         BRA     INVOP
+
+
+MISCCHECKM
+        MOVE.B  D5,D4
+        AND.B   #$8,D4
+        CMP.B   #$8,D4
+        BNE     INVOP
+        MOVE.B  D3,D4
+        AND.B   #$8,D4
+        CMP.B   #$8,D4
+        BNE     INVOP
+        BRA     MISCMOVEM
 
 ******************************************************
 * NOP
@@ -1698,6 +1713,182 @@ MISCPRINTEND
         TRAP    #15
         RTS
 
+
+*************************************************************************
+* MOVEM stuff
+        *   D5 is bit1
+        *   D3 is bit2
+        *   D2 is bit3
+MISCMOVEM
+        MOVE.B  D5,D4               Gets the dr field and stores it into D5
+        CLR     D5                  Moves 0 to D5
+        BTST    #2,D4               Checks the bit at spot 2
+        BEQ     MISCMOVEM2          Moves 1 to D5 if it is 1
+        MOVE.B  #1,D5               Else, it will skip it
+
+MISCMOVEM2
+        CLR     D6                  Clears D6, setting it to 0
+        MOVE.B  D3,D4               Gets the size field and stores it into D6
+        BTST    #2,D4               Checks the bit at spot 2
+        BEQ     MISCMOVEM3          Moves 1 to D5 if it is 1,
+        MOVE.B  #1,D6               Else, it will skip it. 
+
+MISCMOVEM3
+        AND.B   #$3,D3              Gets ride of the first 2 bits
+        LSL.B   #1,D3               Shifts it over 1 to make room for last bit
+        BCLR    #3,D2               Checks furthest left bit and set it to 0
+        BEQ     MISCMOVEM4
+        BSET    #0,D3               If bit was 1, adds 1 to mode
+
+    * bit1 is in D5 dr field
+    * bit2 is in D6 size
+    * bit3 is in D3 mode
+    * bit4 is in D2 reg
+MISCMOVEM4
+        MOVE.B  D5,bit1
+        MOVE.B  D6,bit2
+        MOVE.B  D3,bit3
+        MOVE.B  D2,bit4
+
+    * Prints out MOVEM and size + tab
+        LEA     MMOVEM,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        CMP.B   #1,D6
+        BEQ     MISCMMSIZEL
+        LEA     MWORD,A1
+        BRA     MISCMMPRINTSIZE
+
+MISCMMSIZEL
+        LEA     MLONG,A1
+
+MISCMMPRINTSIZE
+        TRAP    #15
+        LEA     TAB,A1
+        TRAP    #15
+
+        MOVE.W  (A6)+,D6
+        CMP.B   #0,D5
+        BEQ     MISCMMPREDEC
+        BRA     MISCMMPOSTINC
+
+******************************************************************
+* MOVEM Post-decrement
+* Prints out registers from post-decrement
+* D6 holds the reg list
+MISCMMPREDEC
+        MOVE.B  D6,D4
+        MOVE.W  #8,D7               Counter
+        MOVE.B  #$F,D1
+
+        LEA     DISPA,A4
+        BSR     MISCMMPREDECPRINT
+
+        MOVE.W  D6,D4
+        LSR.W   #8,D4
+        MOVE.W  #8,D7               Counter
+        LEA     DISPD,A4
+        BSR     MISCMMPREDECPRINT
+        BRA     MISCMMPREDEC2
+
+MISCMMPREDEC2
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     MISCMMPREDEC3,A2
+        BRA     SUBEA
+
+MISCMMPREDEC3
+        BRA     ENDNEWLINE
+
+* Prints out reg list
+MISCMMPREDECPRINT
+        LSL.B   #1,D4
+        BCC     MISCMMPREDECPRINT3
+
+        CMP.B   #$F,D1
+        BEQ     MISCMMPREDECPRINT2
+        JSR     MISCMMSLASH
+
+MISCMMPREDECPRINT2
+        MOVEA.L A4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BSR     MISCMMPRINTNUM
+
+MISCMMPREDECPRINT3
+        SUB.B   #1,D7
+        CMP.B   #0,D7
+        BNE     MISCMMPREDECPRINT
+        RTS
+
+******************************************************************
+* MOVEM Post-increment
+* Prints out registers from post-increment
+* D6 holds the reg list
+MISCMMPOSTINC
+        LEA     MISCMMPOSTINC2,A2
+        BRA     SUBEA
+
+MISCMMPOSTINC2
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        MOVE.W  D6,D4
+        LSR.W   #8,D4
+        MOVE.W  #8,D7               Counter
+        MOVE.B  #$F,D1
+
+        LEA     DISPA,A4
+        BSR     MISCMMPOSTINCPRINT
+
+        MOVE.B  D6,D4
+        MOVE.W  #8,D7               Counter
+        LEA     DISPD,A4
+        BSR     MISCMMPOSTINCPRINT
+        BRA     MISCMMPOSTINC3
+
+MISCMMPOSTINC3
+        BRA     ENDNEWLINE
+
+* Prints out reg list
+MISCMMPOSTINCPRINT
+        LSR.B   #1,D4
+        BCC     MISCMMPOSTINCPRINT3
+
+        CMP.B   #$F,D1
+        BEQ     MISCMMPOSTINCPRINT2
+        JSR     MISCMMSLASH
+
+MISCMMPOSTINCPRINT2
+        MOVEA.L A4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BSR     MISCMMPRINTNUM
+
+MISCMMPOSTINCPRINT3
+        SUB.B   #1,D7
+        CMP.B   #0,D7
+        BNE     MISCMMPOSTINCPRINT
+        RTS
+
+***********************************************
+* Stuff for printing reg list
+MISCMMPRINTNUM
+        MOVE.B  #8,D1
+        SUB.B   D7,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        RTS
+
+MISCMMSLASH
+        LEA     SLASH,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        RTS
 
 ******************************************************************************************************
 * SUB section
@@ -2722,6 +2913,7 @@ CLOSEBRA    DC.B    ')',0
 POS         DC.B    '+',0
 NEG         DC.B    '-',0
 HASH        DC.B    '#',0
+SLASH       DC.B    '/',0
 
 
 DISPA       DC.B    'A',0
@@ -2753,6 +2945,7 @@ MMOVEW      DC.B    'MOVE.W',0
 MMOVEL      DC.B    'MOVE.L',0
 MMOVEAW     DC.B    'MOVEA.W',0
 MMOVEAL     DC.B    'MOVEA.L',0
+MMOVEM      DC.B    'MOVEM.',0
 
 MDATA       DC.B    'DATA',0
 MSUB        DC.B    'SUB.',0
@@ -2825,6 +3018,8 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 =======
 >>>>>>> 6940f67da71fa367a28b7b250637373589e612d0
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
