@@ -58,9 +58,6 @@
 * sets start and end address
 * temp hard code
 * make UI later for input
-addr1       EQU     $7000
-*addr2   EQU     $703C
-addr2       EQU     $726C
 dispnum     EQU     30          Number of lines output will display before asking to continue
 
 
@@ -85,10 +82,12 @@ START:                  ; first instruction of program
         *MOVE.W  #$4E71,$7000         NOP
 
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
+        *MOVE.L  #$48E3FAF5,$7000
+        *MOVE.L  #$4CF8CDD9,$7004
+        *MOVE.W  #$4000,$7008
 
-        MOVE.L  #$48E3FAF5,$7000
-        MOVE.L  #$4CF8CDD9,$7004
-        MOVE.W  #$4000,$7008
+        * start address: 7000
+        * end address:   766C
 
 *********************************************************************************************************************
 * Takes in user start and end address
@@ -1770,8 +1769,13 @@ MISCMMPRINTSIZE
 
         MOVE.W  (A6)+,D6
         CMP.B   #0,D5
-        BEQ     MISCMMPREDEC
+        BEQ     MISCMMPREDECCHECK
         BRA     MISCMMPOSTINC
+
+MISCMMPREDECCHECK
+        CMP.B   #$4,D3
+        BEQ     MISCMMPREDEC
+        BRA     MISCMMREGMEM
 
 ******************************************************************
 * MOVEM Post-decrement
@@ -1874,6 +1878,59 @@ MISCMMPOSTINCPRINT3
         CMP.B   #0,D7
         BNE     MISCMMPOSTINCPRINT
         RTS
+
+******************************************************************
+* MOVEM Post-increment
+* Prints out registers from post-increment
+* D6 holds the reg list
+MISCMMREGMEM
+        MOVE.B  D6,D4
+        MOVE.W  #8,D7               Counter
+        MOVE.B  #$F,D1
+
+        LEA     DISPD,A4
+        BSR     MISCMMPOSTINCPRINT
+
+        MOVE.W  D6,D4
+        LSR.W   #8,D4
+        MOVE.W  #8,D7               Counter
+        LEA     DISPA,A4
+        BSR     MISCMMPOSTINCPRINT
+        BRA     MISCMMREGMEM2
+
+MISCMMREGMEM2
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     MISCMMREGMEM3,A2
+        BRA     SUBEA
+
+MISCMMREGMEM3
+        BRA     ENDNEWLINE
+
+* Prints out reg list
+MISCMMREGMEMPRINT
+        LSR.B   #1,D4
+        BCC     MISCMMPOSTINCPRINT3
+
+        CMP.B   #$F,D1
+        BEQ     MISCMMPOSTINCPRINT2
+        JSR     MISCMMSLASH
+
+MISCMMREGMEMPRINT2
+        MOVEA.L A4,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BSR     MISCMMPRINTNUM
+
+MISCMMREGMEMPRINT3
+        SUB.B   #1,D7
+        CMP.B   #0,D7
+        BNE     MISCMMPOSTINCPRINT
+        RTS
+
+
 
 ***********************************************
 * Stuff for printing reg list
@@ -3018,6 +3075,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 =======
 >>>>>>> 6940f67da71fa367a28b7b250637373589e612d0
+
 
 
 

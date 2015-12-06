@@ -487,6 +487,16 @@ LOOP
         BLT   LOOP
         BHI   LOOP
 
+******************************** MOVEM *************************************
+
+        MOVEM.L D0-D4,-(A1)
+        MOVEM.W D0-D4,$4000
+        MOVEM.L A0-A5,$4000
+        MOVEM.L A4/D5,(A2)
+        MOVEM.L (A6),D1-D6/A0-A4
+        MOVEM.W $4001,A0/A3/A6/D1/D2
+        MOVEM.L (A4)+,D0/D3/D7/A1/A5/A7
+
  ****************************** END ***************************************
 
 *Stop here. The next instruction shows how a label is used
@@ -499,6 +509,7 @@ LOOP
                                  * where to load the program in memory. 
 
 * End of the program
+
 
 
 
