@@ -49,9 +49,12 @@
 * NEG                   4443
 * LSL                   E76A
 * LSR                   E66A
-* ROL
-* ROR
-* BTST     EXTRA TAB    IMMEDIATE DATA 0702
+* ROL                   
+* ROR                   
+* BTST                  0702
+* JSR
+* ASL 
+* ASR
 ****************************************************************************
 
 
@@ -59,16 +62,17 @@
 * temp hard code
 * make UI later for input
 addr1       EQU     $7000
-*addr2   EQU     $703C
+*addr2      EQU     $703C
 addr2       EQU     $726C
 dispnum     EQU     30          Number of lines output will display before asking to continue
+
 
 
     ORG    $1000
 START:                  ; first instruction of program
 
         
-
+        
 
         *   this stores some test EA into memory m,
         *LEA     addr1,A1
@@ -78,7 +82,7 @@ START:                  ; first instruction of program
         *MOVE.W  #$9078,(A1)+
         *MOVE.W  #$5555,(A1)+
         
-
+        
         *MOVE.L  #$0,A1             This clears the memory at A1, not sure why i didn't it but its probably important
         
         *MOVE.L  #$6700F0D8,$7000
@@ -86,10 +90,10 @@ START:                  ; first instruction of program
 
         *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
 
-        MOVE.L  #$48E3FAF5,$7000
-        MOVE.L  #$4CF8CDD9,$7004
-        MOVE.W  #$4000,$7008
-
+         MOVE.W  #$E762,$7000
+        *MOVE.L  #$4CF8CDD9,$7004
+        *MOVE.W  #$4000,$7008
+           
 *********************************************************************************************************************
 * Takes in user start and end address
 
@@ -363,8 +367,13 @@ JSR
 
         CMP.B   #$2,bit3
         BEQ     MOVEIAN1
+        
+        LEA     TAB,A1
+        MOVE    #3,D1
+        TRAP    #15
+        
         CMP.B   #$7,bit3
-        BEQ     ADDIMD
+        BEQ     ADDIMDDES
         
 BTST 
         LEA MBTST,A1
@@ -374,18 +383,18 @@ BTST
         MOVE.B  D6,D2
         LSL.B   #5,D2
         LSR.B   #5,D2
-        MOVE.B  D2,bit4
+        MOVE.B  D2,bit1
         
         MOVE.B  D6,D2
         LSL.B   #2,D2
         LSR.B   #5,D2
-        MOVE.B  D2,bit3
+        MOVE.B  D2,bit2
         
         MOVE.W  D6,D2
         LSL.W   #4,D2
         LSR.W   #8,D2
         LSR.W   #5,D2
-        MOVE.B  D2,bit1
+        MOVE.B  D2,bit3
         
         LEA TAB,A1
         MOVE.B  #14,D0
@@ -397,26 +406,12 @@ BTST
         
         MOVE.B   #$4,D5
         
-        MOVE.B  bit1,D1
+        MOVE.B  bit3,D1
         MOVE.B  #3,D0
         TRAP    #15
         
-        LEA COMMA,A1
-        MOVE.B  #14,D0
-        TRAP    #15
+        BRA HANDLEDES
         
-        CMP.B   #$0,bit3           
-        BEQ     MOVBDN1
-        CMP.B   #$1,bit3
-        BEQ     MOVEAN1
-        CMP.B   #$2,bit3
-        BEQ     MOVEIAN1
-        CMP.B   #$3,bit3
-        BEQ     MOVEIANI1
-        CMP.B   #$4,bit3
-        BEQ     MOVEIAND1
-        CMP.B   #$7,bit3
-        BEQ     ADDIMD
 MOVW
         LSR.B   #1,D2
         MOVE.B  D2,bit1
@@ -554,7 +549,8 @@ MOVB
         LSR.W   #5,D6 
         MOVE.B  D6,bit2
         
-        *MOVE.B  #$1,D4
+    
+        CLR.L   D5
         
         CMP.B   #$0,bit3           
         BEQ     MOVBDN1
@@ -743,6 +739,10 @@ MOVEIANI1
     
     CMP.B   #$3,D5
     BEQ     ENDNEWLINE
+           
+    CMP.B   #$4,D5
+    BEQ     ENDNEWLINE
+        
         
     LEA COMMA,A1
     MOVE.B  #14,D0
@@ -1102,7 +1102,7 @@ PRINTBYTE
         CMP.B   #$4,bit3
         BEQ     MOVEIAND1
         CMP.B   #$7,bit3
-        BEQ     ADDIMD
+        BEQ     ADDIMDDES
     
 PRINTWORD
     LEA MWORD,A1
@@ -1120,7 +1120,7 @@ PRINTWORD
         CMP.B   #$4,bit3
         BEQ     MOVEIAND1
         CMP.B   #$7,bit3
-        BEQ     ADDIMD
+        BEQ     ADDIMDDES
     
 PRINTLONG
     LEA MLONG,A1
@@ -1138,7 +1138,7 @@ PRINTLONG
         CMP.B   #$4,bit3
         BEQ     MOVEIAND1
         CMP.B   #$7,bit3
-        BEQ     ADDIMD
+        BEQ     ADDIMDDES
         
 LSLR
         *MOVE.B  D6,D2
@@ -1146,8 +1146,6 @@ LSLR
         LSL.B   #5,D2
         LSR.B   #5,D2
         MOVE.B  D2,bit4
-        
-        
         
         MOVE.B  D6,D2
         LSL.B   #2,D2
@@ -1174,6 +1172,16 @@ LSLR
         LSR.W   #5,D7
         MOVE.B  D7,bit0 
         
+        MOVE.B  D6,D7
+        LSL.B   #4,D7
+        LSR.B   #7,D7
+        
+        CMP.B   #3,bit2
+        BEQ     LSLRMEMH
+        
+        CMP.B   #0,D7
+        BEQ     ASLRMEMH
+        
         MOVE.B  D6,D3
         LSL.B   #3,D3
         LSR.B   #6,D3
@@ -1185,6 +1193,45 @@ LSLR
         CMP.B   #$0,bit1
         BEQ     PRINTLSR
         
+ASLRMEMH
+        MOVE.B  #4,D5
+        CMP.B   #$1,bit1
+        BEQ     PRINTASL
+        CMP.B   #$0,bit1
+        BEQ     PRINTASR
+        
+PRINTASL
+        LEA MASL,A1
+        MOVE    #14,D0
+        TRAP    #15
+        
+        CMP.B   #$0,bit2
+        BEQ     PRINTB
+        CMP.B   #$1,bit2
+        BEQ     PRINTW
+        CMP.B   #$2,bit2
+        BEQ     PRINTL
+        BRA     LSLRMEM
+        
+PRINTASR        
+        LEA MASR,A1
+        MOVE    #14,D0
+        TRAP    #15
+        
+        CMP.B   #$0,bit2
+        BEQ     PRINTB
+        CMP.B   #$1,bit2
+        BEQ     PRINTW
+        CMP.B   #$2,bit2
+        BEQ     PRINTL
+        BRA     LSLRMEM
+        
+LSLRMEMH
+        MOVE.B  #4,D5
+        CMP.B   #$1,bit1
+        BEQ     PRINTLSL
+        CMP.B   #$0,bit1
+        BEQ     PRINTLSR
 RORL
         CMP.B   #$1,bit1
         BEQ     PRINTROL
@@ -1241,8 +1288,13 @@ LSLRMEM
         BEQ     MOVEIANI1
         CMP.B   #$4,bit3
         BEQ     MOVEIAND1
+        
+        LEA TAB,A1
+        MOVE.B  #3,D1
+        TRAP    #15 
+        
         CMP.B   #$7,bit3
-        BEQ     ADDIMD
+        BEQ     ADDIMDDES
 PRINTB
         LEA MDOT,A1
         MOVE    #14,D0
@@ -2947,6 +2999,8 @@ MMOVEAW     DC.B    'MOVEA.W',0
 MMOVEAL     DC.B    'MOVEA.L',0
 MMOVEM      DC.B    'MOVEM.',0
 
+MASL        DC.B    'ASL',0
+MASR        DC.B    'ASR',0
 MDATA       DC.B    'DATA',0
 MSUB        DC.B    'SUB.',0
 MSUBA       DC.B    'SUBA.',0
@@ -3007,17 +3061,6 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
     END    START        ; last line of source
 
-
-
-
-
-
-
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 6940f67da71fa367a28b7b250637373589e612d0
 
 
 
