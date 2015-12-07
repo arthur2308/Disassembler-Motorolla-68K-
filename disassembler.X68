@@ -101,8 +101,8 @@ START:                  ; first instruction of program
         * end address:   766C
 
 
-        *MOVE.W  #$E762,$7000
-        *MOVE.L  #$4CF8CDD9,$7004
+         MOVE.W  #$0805,$7000
+         MOVE.W  #$002D,$7002
         *MOVE.W  #$4000,$7008
 
 *********************************************************************************************************************
@@ -409,6 +409,15 @@ BTST
         LSR.W   #5,D2
         MOVE.B  D2,bit3
         
+        MOVE.W  D6,D2
+        LSL.W   #7,D2
+        LSR.W   #8,D2
+        LSR.W   #7,D2
+        MOVE.B  D2,bit0
+        
+        CMP.B   #0,bit0
+        BEQ     BTSTMEM
+        
         LEA TAB,A1
         MOVE.B  #14,D0
         TRAP    #15
@@ -424,6 +433,15 @@ BTST
         TRAP    #15
         
         BRA HANDLEDES
+        
+BTSTMEM
+        LEA TAB,A1
+        MOVE.B  #3,D1
+        TRAP    #15
+        
+        MOVE.B  #$1,D4
+        LEA     HANDLEDES,A2
+        BRA     DISPEA
         
 MOVW
         LSR.B   #1,D2
@@ -1477,11 +1495,14 @@ BCCPRINT
 *   SUBI
 
 IMD     MOVE.B  D5,bit1
+        MOVE.B  D2,D1
         MOVE.B  (A6)+,D2
         
         MOVE    D5,D4
         AND.B   #$0001,D4
         CMP.B   #$1,D4
+        BEQ     BTST
+        CMP.B   #8,D1
         BEQ     BTST
 
         ADD.B   D2,D7
@@ -3466,6 +3487,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
