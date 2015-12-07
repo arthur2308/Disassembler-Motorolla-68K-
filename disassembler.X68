@@ -101,7 +101,7 @@ START:                  ; first instruction of program
         * end address:   766C
 
 
-         MOVE.W  #$E762,$7000
+        *MOVE.W  #$E762,$7000
         *MOVE.L  #$4CF8CDD9,$7004
         *MOVE.W  #$4000,$7008
 
@@ -336,6 +336,8 @@ CODE
         BEQ     IMD
         CMP.B   #$4,D3              Goes to miscellaneous section
         BEQ     MISC
+        CMP.B   #$5,D3
+        BEQ     ADDQ                Goes to addq section
         CMP.B   #$6,D3
         BEQ     BCC
         CMP.B   #$9,D3              Goes to sub section
@@ -1591,6 +1593,9 @@ IMDEA
         LEA     TAB,A1
         MOVE.B  #14,D0
         TRAP    #15
+        LEA     HASH,A1
+        MOVE.B  #14,D0
+        TRAP    #15
         * Loads return address into A2
         LEA     IMDEA2,A2
         BRA     DISPEA
@@ -1629,6 +1634,10 @@ MISC
         MOVE.B  D4,bit2
         CMP.B   #$3A,bit2
         BEQ     JSR
+
+    ***
+        *BTST.B  #$04,bit0
+        *BEQ     MISCLEA
         *   D5 is bit1
         *   D3 is bit2
         *   D2 is bit3
@@ -1642,7 +1651,7 @@ MISC
         BEQ     MISCNOT
         CMP.B   #$E,D5              Goes to section to check for NOP or JSR
         BEQ     MISCBIT2
-        BRA     MISCCHECKM
+        BRA     MISCCHKLEA          Check bits to see if LEA, else branch to MoveM
 
 MISCBIT2
         * D3 is bit2
@@ -1658,6 +1667,16 @@ MISCBIT3
         BEQ     MISCRTS
         BRA     INVOP
 
+MISCCHKLEA
+        MOVE.B  D5,D4
+        AND.B   #$1,D4
+        CMP.B   #$1,D4
+        BNE     MISCCHECKM
+        MOVE.B  D3,D4
+        AND.B   #$C,D4
+        CMP.B   #$C,D4
+        BNE     MISCCHECKM
+        BRA     MISCLEA
 
 MISCCHECKM
         MOVE.B  D5,D4
@@ -1679,6 +1698,122 @@ MISCNOP
         TRAP    #15
 
         BRA     ENDNEWLINE          Goes to next opcode
+
+******************************************************
+MISCLEA
+    
+        LEA     MLEA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     TAB,A1
+        MOVE.B  #14,D0
+        TRAP    #15        
+        
+        LSR.B   #1,D5   *isolate addr register
+        MOVE.W  D2,D6   *copy over bit3 for potential manip of ea reg
+        LSL.B   #2,D3
+        LSR.B   #2,D3   *d3 00xx
+        MOVE.B  D2,D7
+        LSR.B   #3,D7
+        ***
+*        AND.L   D2,D7
+*        CMP.L   #$0,D7
+*        BEQ     LEAMODE0
+*        CMP.L   #$1,D7 
+*        BEQ     LEAMODE1
+*        
+*        CMP.B   #1,D7
+*        BEQ     LEAMODE1
+*        CMP.B   #0,D7
+*        BEQ     LEAMODE0
+*        
+*        ***
+        CMP.B   #%111,D3
+        BNE     LEA_ABS_EA
+        
+        CMP.B   #%010,D3
+        BEQ     LEA_INDIR_AN
+        
+LEAMODE1
+        LSR.B   #1,D3
+        ADD.B   #1,D3   *ea mode should be set to 111
+        CMP.B   #7,D3   *error check
+        BNE     INVOP
+        BEQ     LEA_ABS_EA 
+        
+LEAMODE0
+        LSR.B   #1,D3   *ea mode should be set to 010
+        CMP.B   #2,D3   *error check
+        BNE     INVOP
+        BEQ     LEA_INDIR_AN
+        
+LEA_ABS_EA
+        *MOVE RET LOC INTO A2
+        CMP.B   #$0,bit4
+        BEQ     LEAIMD0
+        CMP.B   #$1,bit4
+        BEQ     LEAIMD1
+
+LEAIMD0
+        MOVE.B  #$1,D4
+        LEA     CONTPRINTLEA,A2
+        BRA     DISPEA
+LEAIMD1 
+        MOVE.B  #$2,D4
+        LEA     CONTPRINTLEA,A2
+        BRA     DISPEA  
+        
+CONTPRINTLEA
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        MOVE.B  D5,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        BRA     ENDNEWLINE
+        
+LEA_INDIR_AN
+        LSL.B   #1,D6
+        LSR.B   #1,D6   *isolate ea register
+
+        LEA     MLEA, A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     TAB, A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        LEA     OPENBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        MOVE.B  D6,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        
+        LEA     CLOSEBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        MOVE.B  D3,D1
+        MOVE.B  #3,D0
+        TRAP    #15
 
 ******************************************************
 * RTS
@@ -1783,6 +1918,199 @@ MISCPRINTEND
         TRAP    #15
         RTS
 
+*******************************************************************************
+* ADDQ section 
+
+ADDQ    
+*       BRA     IMD
+        
+        MOVE.B  D5,bit1
+        MOVE.B  (A6)+,D2
+
+        ADD.B   D2,D7
+
+        MOVE.B  D2,D3               *copy data at D2 to D3
+                                    *get digit in 10's place
+        LSR.B   #4,D3               Shifts right to get rid of 1's place
+                                    *get digit in 1's place
+        LSL.B   #4,D2               Shift left to get rid of 10's place
+        LSR.B   #4,D2               Shift back right into 1's place
+
+
+        MOVE.W  D6,D4
+        LSL.W   #$4,D4
+        LSR.W   #$8,D4
+        LSR.W   #$2,D4
+        MOVE.B  D4,bit2
+    
+
+*        BRA     IMD
+        LEA     MADDQ,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        *determine size
+        MOVE.B  bit2,D6   *copy to D6 for manip
+        LSR.B   #1,D3
+        CMP.B   #$0,D3
+        BEQ     ADDQB
+        CMP.W   #$1,D3
+        BEQ     ADDQW
+        CMP.L   #$2,D3
+        BEQ     ADDQL
+        BRA     INVOP
+
+ADDQB
+        LEA     MBYTE,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     ADDQCONT
+        
+ADDQW
+        MOVE.B  D3,D4
+        LEA     MWORD,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     ADDQCONT
+        
+ADDQL        
+        MOVE.B  D3,D4
+        LEA     MLONG,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     ADDQCONT
+        
+ADDQCONT        
+        LEA     TAB,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+        LEA     HASH,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        LSR.B   #1,D5
+        MOVE.B  D5,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        LEA     COMMA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        BRA     ADDQEA
+        
+ADDQEA  
+        MOVE.B  D3,D5       *D5 to now hold size 
+        MOVE.B  D6,D3       
+        LSL.B   #2,D3
+        LSR.B   #1,D3           MM0
+        
+        MOVE.B  D2,D6       *hold bit3 copy
+        LSL.B   #1,D2
+        LSR.B   #1,D2       *D2 should hold eareg
+
+        LSR.B   #3,D6
+        ADD.B   D6,D3
+        
+        MOVE.B  D2,bit4     *REG?
+        MOVE.B  D3,bit3     *MODE?
+        MOVE.B  D5,bit2     *SIZE?
+        LEA     ENDNEWLINE,A2
+        BRA     SUBEA
+        ***
+        
+        
+        CMP.B   #$0,D3
+        BEQ     DN_EAM
+        CMP.B   #$1,D3
+        BEQ     AN_EAM
+        CMP.B   #$2,D3
+        BEQ     INAN_EAM
+        CMP.B   #$3,D3
+        BEQ     INC_EAM
+        CMP.B   #$4,D3
+        BEQ     DEC_EAM
+        CMP.B   #$7,D3
+        BEQ     ABS_EA
+        
+DN_EAM
+        LEA     DISPD,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        MOVE.B  D2,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        BRA     ENDNEWLINE
+        
+AN_EAM
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        MOVE.B  D2,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        BRA     ENDNEWLINE
+        
+INAN_EAM
+        LEA     OPENBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        MOVE.B  D2,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        LEA     CLOSEBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     ENDNEWLINE
+        
+INC_EAM                             *Consider combining inc and dec with in and removing dup com
+        LEA     OPENBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        MOVE.W  D2,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        
+        LEA     CLOSEBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     POS,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     ENDNEWLINE
+        
+DEC_EAM
+        LEA     NEG,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     OPENBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     DISPA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        MOVE.B  D2,D1
+        MOVE.B  #3,D0
+        TRAP    #15
+        LEA     CLOSEBRA,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        BRA     ENDNEWLINE
+        
+ABS_EA  
+        *USE D5 TO SET SIZE APPROPRIATELY AND TO FULFILL REQ TO USE DISPEA SR
+        LEA     ABS_EA2,A2
+        BRA     DISPEA
+        
+ABS_EA2
+        BRA     ENDNEWLINE
 
 *************************************************************************
 * MOVEM stuff
@@ -2358,16 +2686,16 @@ SUBPRINTADD   * Displays 'ADD.'
 
 SUBPRINTB
         CMP.B   #$4,bit2
-        BLT     SUBPRINTEOR
+        BLT     SUBPRINTCMP
 
-SUBPRINTCMP   * Displays 'CMP.' 
-        LEA     MCMP,A1
+SUBPRINTEOR   * Displays 'EOR.' 
+        LEA     MEOR,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     SUBPRINTEND
 
-SUBPRINTEOR   * Displays 'EOR.' 
-        LEA     MEOR,A1
+SUBPRINTCMP   * Displays 'CMP.' 
+        LEA     MCMP,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     SUBPRINTEND
@@ -3093,6 +3421,7 @@ MCMPA       DC.B    'CMPA.',0
 MEOR        DC.B    'EOR.',0
 MEORI       DC.B    'EORI.',0
 MADDA       DC.B    'ADDA.',0
+MADDQ       DC.B    'ADDQ.',0
 
 MBEQ        DC.B    'BEQ',0
 MBNE        DC.B    'BNE',0
@@ -3101,6 +3430,7 @@ MBHI        DC.B    'BHI',0
 MBRA        DC.B    'BRA',0
 MNOP        DC.B    'NOP',0
 MRTS        DC.B    'RTS',0
+MLEA        DC.B    'LEA',0
 
 MADDR1      DC.B    'Lemme get dat start address, fam: ',0
 MADDR2      DC.B    'Gimme that end address too homie: ',0
@@ -3136,6 +3466,9 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
