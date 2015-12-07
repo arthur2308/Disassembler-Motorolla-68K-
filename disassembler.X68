@@ -61,12 +61,12 @@
 * sets start and end address
 * temp hard code
 * make UI later for input
-<<<<<<< HEAD
-=======
+
+
 addr1       EQU     $7000
 *addr2      EQU     $703C
 addr2       EQU     $726C
->>>>>>> 6b74b234e02cda031d9a36bdc0443dace8302111
+
 dispnum     EQU     30          Number of lines output will display before asking to continue
 
 
@@ -96,16 +96,15 @@ START:                  ; first instruction of program
         *MOVE.L  #$4CF8CDD9,$7004
         *MOVE.W  #$4000,$7008
 
-<<<<<<< HEAD
+
         * start address: 7000
         * end address:   766C
 
-=======
+
          MOVE.W  #$E762,$7000
         *MOVE.L  #$4CF8CDD9,$7004
         *MOVE.W  #$4000,$7008
-           
->>>>>>> 6b74b234e02cda031d9a36bdc0443dace8302111
+
 *********************************************************************************************************************
 * Takes in user start and end address
 
@@ -1239,6 +1238,13 @@ PRINTASR
         BRA     LSLRMEM
         
 LSLRMEMH
+        MOVE.W  D6,D7
+        LSL.W   #6,D7
+        LSR.W   #8,D7
+        LSR.W   #7,D7
+        CMP.B   #0,D7
+        BEQ     ASLRMEMH
+        
         MOVE.B  #4,D5
         CMP.B   #$1,bit1
         BEQ     PRINTLSL
@@ -3131,24 +3137,6 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
     END    START        ; last line of source
 
-
-
-
-<<<<<<< HEAD
-
-
-
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 6940f67da71fa367a28b7b250637373589e612d0
-
-
-
-
-=======
->>>>>>> 6b74b234e02cda031d9a36bdc0443dace8302111
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
