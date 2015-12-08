@@ -101,8 +101,8 @@ START:                  ; first instruction of program
         * end address:   766C
 
 
-         MOVE.W  #$0805,$7000
-         MOVE.W  #$002D,$7002
+        *MOVE.W  #$5A80,$7000
+        *MOVE.L  #$47F80033,$7000
         *MOVE.W  #$4000,$7008
 
 *********************************************************************************************************************
@@ -360,7 +360,9 @@ CODE
         BEQ     LSLR                Goes to divsw
 
         BRA     INVOPCODE
-        
+
+******************************************************************************************************
+* 
 JSR
         LEA MJSR,A1
         MOVE.B  #14,D0
@@ -1454,7 +1456,7 @@ BCCNEXT
         MOVE.L  D4,D7
         BRA     DISPADDRSTART
 
-BCCDISP
+BCCDISP * Figures out which conditional code it is
         CMP.B   #$0,D2
         BEQ     BCCBRA
         CMP.B   #$7,D2
@@ -1468,6 +1470,7 @@ BCCDISP
 
         BRA     INVOP
 
+* Prints out the appropiate code
 BCCBRA
         LEA     MBRA,A1
         BRA     BCCPRINT
@@ -1688,6 +1691,7 @@ MISCBIT3
         BEQ     MISCRTS
         BRA     INVOP
 
+* Checks if the opcode is LEA
 MISCCHKLEA
         MOVE.B  D5,D4
         AND.B   #$1,D4
@@ -1699,6 +1703,7 @@ MISCCHKLEA
         BNE     MISCCHECKM
         BRA     MISCLEA
 
+* Checks if the opcode is MOVEM
 MISCCHECKM
         MOVE.B  D5,D4
         AND.B   #$8,D4
@@ -1732,10 +1737,18 @@ MISCLEA
         
         LSR.B   #1,D5   *isolate addr register
         MOVE.W  D2,D6   *copy over bit3 for potential manip of ea reg
-        LSL.B   #2,D3
-        LSR.B   #2,D3   *d3 00xx
-        MOVE.B  D2,D7
-        LSR.B   #3,D7
+
+        LSL.B   #1,D3               Shifts the byte to the left
+        AND.B   #$07,D3             Clears everything except the last 3 bits because those 3 are the mode bits
+
+        BCLR    #3,D2               Clears the first bit of the byte because it isn't part of the reg
+        BEQ     MISCLEA2             If it was already zero, then it will skip this next step
+        ADD.B   #$1,D3              It it was one, then it will add one to the mode
+
+MISCLEA2
+        MOVE.B  D3,bit3     *MODE?
+        MOVE.B  D2,bit4     *REG?
+
         ***
 *        AND.L   D2,D7
 *        CMP.L   #$0,D7
@@ -1749,25 +1762,18 @@ MISCLEA
 *        BEQ     LEAMODE0
 *        
 *        ***
-        CMP.B   #%111,D3
-        BNE     LEA_ABS_EA
-        
-        CMP.B   #%010,D3
-        BEQ     LEA_INDIR_AN
         
 LEAMODE1
-        LSR.B   #1,D3
-        ADD.B   #1,D3   *ea mode should be set to 111
+        *ea mode should be set to 111
         CMP.B   #7,D3   *error check
-        BNE     INVOP
         BEQ     LEA_ABS_EA 
         
 LEAMODE0
-        LSR.B   #1,D3   *ea mode should be set to 010
+        *ea mode should be set to 010
         CMP.B   #2,D3   *error check
-        BNE     INVOP
         BEQ     LEA_INDIR_AN
-        
+        BNE     INVOP
+
 LEA_ABS_EA
         *MOVE RET LOC INTO A2
         CMP.B   #$0,bit4
@@ -1797,17 +1803,7 @@ CONTPRINTLEA
         BRA     ENDNEWLINE
         
 LEA_INDIR_AN
-        LSL.B   #1,D6
-        LSR.B   #1,D6   *isolate ea register
 
-        LEA     MLEA, A1
-        MOVE.B  #14,D0
-        TRAP    #15
-
-        LEA     TAB, A1
-        MOVE.B  #14,D0
-        TRAP    #15
-        
         LEA     OPENBRA,A1
         MOVE.B  #14,D0
         TRAP    #15
@@ -1816,7 +1812,7 @@ LEA_INDIR_AN
         MOVE.B  #14,D0
         TRAP    #15
         
-        MOVE.B  D6,D1
+        MOVE.B  D2,D1
         MOVE.B  #3,D0
         TRAP    #15
         
@@ -1832,9 +1828,11 @@ LEA_INDIR_AN
         MOVE.B  #14,D0
         TRAP    #15
 
-        MOVE.B  D3,D1
+        MOVE.B  D5,D1
         MOVE.B  #3,D0
         TRAP    #15
+
+        BRA     ENDNEWLINE
 
 ******************************************************
 * RTS
@@ -1957,10 +1955,8 @@ ADDQ
         LSL.B   #4,D2               Shift left to get rid of 10's place
         LSR.B   #4,D2               Shift back right into 1's place
 
-
-        MOVE.W  D6,D4
-        LSL.W   #$4,D4
-        LSR.W   #$8,D4
+        * gets size
+        MOVE.W  D3,D4
         LSR.W   #$2,D4
         MOVE.B  D4,bit2
     
@@ -1971,13 +1967,11 @@ ADDQ
         TRAP    #15
         
         *determine size
-        MOVE.B  bit2,D6   *copy to D6 for manip
-        LSR.B   #1,D3
-        CMP.B   #$0,D3
+        CMP.B   #$0,D4
         BEQ     ADDQB
-        CMP.W   #$1,D3
+        CMP.W   #$1,D4
         BEQ     ADDQW
-        CMP.L   #$2,D3
+        CMP.L   #$2,D4
         BEQ     ADDQL
         BRA     INVOP
 
@@ -1988,14 +1982,12 @@ ADDQB
         BRA     ADDQCONT
         
 ADDQW
-        MOVE.B  D3,D4
         LEA     MWORD,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     ADDQCONT
         
 ADDQL        
-        MOVE.B  D3,D4
         LEA     MLONG,A1
         MOVE.B  #14,D0
         TRAP    #15
@@ -2010,32 +2002,34 @@ ADDQCONT
         MOVE.B  #14,D0
         TRAP    #15
         
-        LSR.B   #1,D5
+        LSR.B   #1,D5               Shifts the byte over to get the value of the immediate data
+        CMP.B   #$0,D5              Checks if the value is 0
+        BNE     ADDQCONT2           If it isn't then skips this next part
+        MOVE.B  #8,D5               If it is, then replaces the 0 with 8
+
+ADDQCONT2
         MOVE.B  D5,D1
         MOVE.B  #3,D0
         TRAP    #15
+        
         LEA     COMMA,A1
         MOVE.B  #14,D0
         TRAP    #15
         
         BRA     ADDQEA
         
-ADDQEA  
-        MOVE.B  D3,D5       *D5 to now hold size 
-        MOVE.B  D6,D3       
-        LSL.B   #2,D3
-        LSR.B   #1,D3           MM0
-        
-        MOVE.B  D2,D6       *hold bit3 copy
-        LSL.B   #1,D2
-        LSR.B   #1,D2       *D2 should hold eareg
+ADDQEA
+        LSL.B   #1,D3               Shifts the byte to the left
+        AND.B   #$07,D3             Clears everything except the last 3 bits because those 3 are the mode bits
 
-        LSR.B   #3,D6
-        ADD.B   D6,D3
-        
+        BCLR    #3,D2               Clears the first bit of the byte because it isn't part of the reg
+        BEQ     ADDQEA2             If it was already zero, then it will skip this next step
+        ADD.B   #$1,D3              It it was one, then it will add one to the mode
+
+ADDQEA2
         MOVE.B  D2,bit4     *REG?
         MOVE.B  D3,bit3     *MODE?
-        MOVE.B  D5,bit2     *SIZE?
+        MOVE.B  D4,bit2     *SIZE?
         LEA     ENDNEWLINE,A2
         BRA     SUBEA
         ***
@@ -2174,6 +2168,7 @@ MISCMOVEM4
         MOVE.B  #14,D0
         TRAP    #15
 
+* Finds the appropiate size and prints it out
         CMP.B   #1,D6
         BEQ     MISCMMSIZEL
         LEA     MWORD,A1
@@ -2187,6 +2182,7 @@ MISCMMPRINTSIZE
         LEA     TAB,A1
         TRAP    #15
 
+* Figures out if it is REG-to-MEM or MEM-to-REG
         MOVE.W  (A6)+,D6
         CMP.B   #0,D5
         BEQ     MISCMMPREDECCHECK
@@ -2300,8 +2296,8 @@ MISCMMPOSTINCPRINT3
         RTS
 
 ******************************************************************
-* MOVEM Post-increment
-* Prints out registers from post-increment
+* MOVEM REG-to-MEM non-predecrement
+* Prints out a register to memory when it is NOT in predecrement
 * D6 holds the reg list
 MISCMMREGMEM
         MOVE.B  D6,D4
@@ -3487,6 +3483,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
