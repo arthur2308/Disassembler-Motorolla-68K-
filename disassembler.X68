@@ -100,7 +100,7 @@ START:                  ; first instruction of program
         * start address: 7000
         * end address:   766C
 
-
+        MOVE.L  #$46004610,$7000
         *MOVE.W  #$5A80,$7000
         *MOVE.L  #$47F80033,$7000
         *MOVE.W  #$4000,$7008
@@ -1849,6 +1849,7 @@ MISCRTS
 * Reuses some of IMD section to display because they have similar format
 *  (I was kinda lazy too)
 MISCNOT
+        CLR     D4
         LSR.B   #1,D3
         BCC     MISCNOT2
         ADD.B   #$2,D4
@@ -3483,6 +3484,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
