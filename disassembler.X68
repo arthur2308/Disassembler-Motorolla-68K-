@@ -21,14 +21,14 @@
 * COMPLETED WORK:
 * SUB
 * SUBA
-* SUBA      ERROR on CFC6 produces SUBA.L D6,A7 should be MULS.W    D6,D7 fixed however further testing needed 
+* SUBA      
 * AND
-* ADD   - NOT TESTED
+* ADD 
 * SUBI
 * ORI   - EORI and CMPI uses the same logic as these two
 * NOT
 * Bcc
-* BRA   - NOT TESTED
+* BRA
 * CMP
 * CMPI
 * CMPA
@@ -42,7 +42,7 @@
 * IO for user input
 * IO for continue/exit
 * 
-* MOVE                  1806        LONGWORD ADDRESS AND IMMEDIATE DATA FOR DESTINATION ARE NOT IMPLEMETED
+* MOVE                  1806
 * MOVEA                 3846
 * MULS                  CFC6
 * DIVS                  85C3
@@ -57,86 +57,55 @@
 * ASR
 ****************************************************************************
 
-
-* sets start and end address
-* temp hard code
-* make UI later for input
-
-
-addr1       EQU     $7000
-*addr2      EQU     $703C
-addr2       EQU     $726C
-
 dispnum     EQU     30          Number of lines output will display before asking to continue
-
 
 
     ORG    $1000
 START:                  ; first instruction of program
 
-        
-        
+*********************************************************************************************************************
+* Displays a fancy ascii art
 
-        *   this stores some test EA into memory m,
-        *LEA     addr1,A1
-        *MOVE.W  #$0440,(A1)+        *917C
-        *MOVE.W  #$917C,(A1)+       
-        *MOVE.L  #$5555A7FF,(A1)+
-        *MOVE.W  #$9078,(A1)+
-        *MOVE.W  #$5555,(A1)+
-        
-        
-        *MOVE.L  #$0,A1             This clears the memory at A1, not sure why i didn't it but its probably important
-        
-        *MOVE.L  #$6700F0D8,$7000
-        *MOVE.W  #$4E71,$7000         NOP
-
-        *MOVE.L  #$0,A1              This clears the memory at A1, not sure why i didn't it but its probably important
-        *MOVE.L  #$48E3FAF5,$7000
-        *MOVE.L  #$4CF8CDD9,$7004
-        *MOVE.W  #$4000,$7008
-
-
-        * start address: 7000
-        * end address:   766C
-
-        MOVE.L  #$46004610,$7000
-        *MOVE.W  #$5A80,$7000
-        *MOVE.L  #$47F80033,$7000
-        *MOVE.W  #$4000,$7008
+DISPASCII
+        LEA     ASCII11,A1
+        MOVE    #13,D0
+        TRAP    #15
+        LEA     ASCII12,A1
+        TRAP    #15
+        LEA     ASCII13,A1
+        TRAP    #15
+        LEA     ASCII14,A1
+        TRAP    #15
+        LEA     ASCII15,A1
+        TRAP    #15
+        LEA     ASCII16,A1
+        TRAP    #15
+        LEA     ASCII17,A1
+        TRAP    #15
+        LEA     ASCII18,A1
+        TRAP    #15
+        LEA     ASCII19,A1
+        TRAP    #15
+        LEA     ASCII1A,A1
+        TRAP    #15
+        LEA     ASCII1B,A1
+        TRAP    #15
+        LEA     ASCII1C,A1
+        TRAP    #15
+        LEA     ASCII1D,A1
+        TRAP    #15
+        LEA     ASCII1E,A1
+        TRAP    #15
+        LEA     ASCII1F,A1
+        TRAP    #15
+        LEA     NEWLINE,A1          Creates a new line in output window
+        MOVE.B  #14,D0
+        TRAP    #15
 
 *********************************************************************************************************************
 * Takes in user start and end address
 
 IOSTART
-
-        LEA     ASCII1,A1
-        MOVE    #13,D0
-        TRAP    #15
-        
-        LEA     ASCII2,A1
-        MOVE    #13,D0
-        TRAP    #15
-        
-        LEA     ASCII3,A1
-        MOVE    #13,D0
-        TRAP    #15
-        
-        LEA     ASCII4,A1
-        MOVE    #13,D0
-        TRAP    #15
-        
-        LEA     ASCII5,A1
-        MOVE    #13,D0
-        TRAP    #15
-        
-        LEA     ASCII6,A1
-        MOVE    #13,D0
-        TRAP    #15
-        
-        LEA     ASCII7,A1
-        MOVE    #13,D0
-        TRAP    #15
 *   Displays message asking for address
         LEA     MADDR1,A1           Loads message to retrieve first number
         BSR     IOGETADDR
@@ -3377,15 +3346,14 @@ ASK4REPEAT2
 
         MOVE.B  bit4,D1             User input was stored in bit4
         CMP.B   #$59,D1             Char Y
-        BEQ     IOSTART
+        BEQ     DISPASCII
         CMP.B   #$79,D1             Char y
-        BEQ     IOSTART
+        BEQ     DISPASCII
         CMP.B   #$4E,D1             Char N
         BEQ     DONE
         CMP.B   #$6E,D1             Char n
         BEQ     DONE
         BRA     ASK4REPEAT2          Asks again if user enters invalid character
-
 
 **************************************************************************************************
 ERROR   LEA     MERROR,A1
@@ -3497,6 +3465,21 @@ ASCII5      DC.B    '  \ \  ___  \ \  \|\  \ \  \\ \  \ ',0
 ASCII6      DC.B    '   \ \_______\ \_______\ \__\\ \__\',0
 ASCII7      DC.B    '    \|_______|\|_______|\|__| \|__|',0
 
+ASCII11     DC.B    '%%#% %% %% #%**      .%%%%%%%%%.',0
+ASCII12     DC.B    ' %#  %%#%% #%..      *%%%%%%%%%%              %/%%%/% #%%%%%    /%%    %%#  %%#',0
+ASCII13     DC.B    ' %#  %% %% #%,,       %%%%%%%%%%.     ###       %%%   /%%,,,   /%%%    % %, %%#',0
+ASCII14     DC.B    '                    # /%%%%%%%%%#               %%%   /%%***  /% %%%   %  %/ %#',0
+ASCII15     DC.B    '                   (%  %%%%%%%%%%               %%%   /%%%%% /%  (%%   %  %  %#',0
+ASCII16     DC.B    '                   %%, (%%%%%%%%%#',0
+ASCII17     DC.B    '                  #%%   %%%%%%%%%%',0
+ASCII18     DC.B    '                  %%.   #%%%%%%%%%#',0
+ASCII19     DC.B    '                 #%#     %%%%%%%%%%           ________  ________  ___  __',0
+ASCII1A     DC.B    '                .%%      #%%%%%%%%%(        |\   ____\|\   __  \|\  \|\  \',0
+ASCII1B     DC.B    '                %%( (%%%%%%%%%%%%%%%        \ \  \___|\ \  \|\  \ \  \/  /|_',0
+ASCII1C     DC.B    '               ,%%  //////%%%%%%%%%%(        \ \  \____\ \   __  \ \   ___  \',0
+ASCII1D     DC.B    '               %%/        *%%%%%%%%%%         \ \  ___  \ \  \|\  \ \  \\ \  \',0
+ASCII1E     DC.B    '              %%%,         %%%%%%%%%%/         \ \_______\ \_______\ \__\\ \__\',0
+ASCII1F     DC.B    '           (%%%%%%%(     *%%%%%%%%%%%%%,        \|_______|\|_______|\|__| \|__|',0
 
 ********************************** MEMORY STORAGE **********************************************
 * Stores memory locations at the end of the program
@@ -3520,6 +3503,7 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
 
 
 
