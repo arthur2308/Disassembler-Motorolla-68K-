@@ -109,6 +109,34 @@ START:                  ; first instruction of program
 * Takes in user start and end address
 
 IOSTART
+
+        LEA     ASCII1,A1
+        MOVE    #13,D0
+        TRAP    #15
+        
+        LEA     ASCII2,A1
+        MOVE    #13,D0
+        TRAP    #15
+        
+        LEA     ASCII3,A1
+        MOVE    #13,D0
+        TRAP    #15
+        
+        LEA     ASCII4,A1
+        MOVE    #13,D0
+        TRAP    #15
+        
+        LEA     ASCII5,A1
+        MOVE    #13,D0
+        TRAP    #15
+        
+        LEA     ASCII6,A1
+        MOVE    #13,D0
+        TRAP    #15
+        
+        LEA     ASCII7,A1
+        MOVE    #13,D0
+        TRAP    #15
 *   Displays message asking for address
         LEA     MADDR1,A1           Loads message to retrieve first number
         BSR     IOGETADDR
@@ -3461,6 +3489,14 @@ MERROR      DC.B    'ERROR: Something broke',0
 MDONE       DC.B    'COMPLETE: IT DID NOT CRASH',0
 MCONT       DC.B    '**PRESS ENTER TO CONTINUE**',0
 
+ASCII1      DC.B    ' ________  ________  ___  __       ',0
+ASCII2      DC.B    '|\   ____\|\   __  \|\  \|\  \     ',0
+ASCII3      DC.B    '\ \  \___|\ \  \|\  \ \  \/  /|_   ',0
+ASCII4      DC.B    ' \ \  \____\ \   __  \ \   ___  \  ',0
+ASCII5      DC.B    '  \ \  ___  \ \  \|\  \ \  \\ \  \ ',0
+ASCII6      DC.B    '   \ \_______\ \_______\ \__\\ \__\',0
+ASCII7      DC.B    '    \|_______|\|_______|\|__| \|__|',0
+
 
 ********************************** MEMORY STORAGE **********************************************
 * Stores memory locations at the end of the program
@@ -3484,6 +3520,8 @@ bit4        DS.B    1           SEE NOTE UP TOP
 
 
     END    START        ; last line of source
+
+
 
 
 
